@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Recorder",
+  "version": "1.0.0",
+  "description": "Chrome Recorder Extension",
+  "permissions": ["sidePanel", "storage", "activeTab"],
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open Side Panel"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "icons": {
+    "16": "public/icons/icon-16.png",
+    "48": "public/icons/icon-48.png",
+    "128": "public/icons/icon-128.png"
+  }
+}
