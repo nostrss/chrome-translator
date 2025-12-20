@@ -1,3 +1,3 @@
-import type { TodoAction } from '@/features/todo/model/todoSlice';
+import type { RecorderAction } from '@/features/recorder/model/recorderSlice';
 
-export type RootAction = TodoAction;
+export type RootAction = RecorderAction;

@@ -1,4 +1,4 @@
 import { combineEpics } from 'redux-observable';
-import { todoEpics } from '@/features/todo/intent/todoEpic';
+import { recorderEpics } from '@/features/recorder/intent/recorderEpic';
 
-export const rootEpic = combineEpics(...todoEpics);
+export const rootEpic = combineEpics(...recorderEpics);

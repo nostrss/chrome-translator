@@ -1,6 +1,6 @@
 import { combineReducers } from '@reduxjs/toolkit';
-import { todoReducer } from '@/features/todo/model/todoSlice';
+import { recorderReducer } from '@/features/recorder/model/recorderSlice';
 
 export const rootReducer = combineReducers({
-  todo: todoReducer,
+  recorder: recorderReducer,
 });

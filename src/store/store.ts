@@ -14,7 +14,9 @@ export const store = configureStore({
     getDefaultMiddleware({
       thunk: false,
       serializableCheck: {
-        ignoredActions: ['todo/fetchTodos'],
+        // Blob, MediaStream 등 직렬화 불가능한 객체 무시
+        ignoredActions: ['recorder/recordingCompleted'],
+        ignoredPaths: ['recorder.audio.blob'],
       },
     }).concat(epicMiddleware),
   devTools: import.meta.env.DEV,
