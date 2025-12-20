@@ -3,7 +3,7 @@
   "name": "Chrome Recorder",
   "version": "1.0.0",
   "description": "Chrome Recorder Extension",
-  "permissions": ["sidePanel", "storage", "activeTab"],
+  "permissions": ["sidePanel", "storage", "activeTab", "tabCapture"],
   "side_panel": {
     "default_path": "src/sidepanel/sidepanel.html"
   },
@@ -18,5 +18,11 @@
     "16": "public/icons/icon-16.png",
     "48": "public/icons/icon-48.png",
     "128": "public/icons/icon-128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["worklets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
