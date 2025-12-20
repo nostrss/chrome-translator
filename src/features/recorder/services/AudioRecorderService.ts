@@ -91,9 +91,10 @@ export class AudioRecorderService {
         }
       };
 
-      // 연결: Source -> Worklet
-      // destination에 연결하지 않으면 소리가 재생되지 않음 (녹음만 수행)
+      // 연결: Source -> Worklet (녹음용)
       this.sourceNode.connect(this.workletNode);
+      // 연결: Source -> Destination (재생용 - 녹음 중에도 소리가 들림)
+      this.sourceNode.connect(this.audioContext.destination);
 
       // 녹음 시작 메시지
       this.workletNode.port.postMessage({
