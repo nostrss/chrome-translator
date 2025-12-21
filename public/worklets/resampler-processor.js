@@ -2,6 +2,7 @@
  * Resampler Audio Worklet Processor
  * 브라우저 기본 샘플레이트 → 16kHz 리샘플링
  * Stereo → Mono 변환
+ * 0.1초(1600샘플) 단위로 자동 청킹
  */
 class ResamplerProcessor extends AudioWorkletProcessor {
   constructor() {
@@ -11,8 +12,10 @@ class ResamplerProcessor extends AudioWorkletProcessor {
     this.inputSampleRate = sampleRate;
     this.resampleRatio = 1;
     this.resampleBuffer = [];
+    this.chunkBuffer = []; // 실시간 청킹용 버퍼
     this.lastSample = 0;
     this.fractionalIndex = 0;
+    this.CHUNK_SIZE = 1600; // 0.1초 @ 16kHz
     this.port.onmessage = this.handleMessage.bind(this);
   }
 
@@ -24,11 +27,18 @@ class ResamplerProcessor extends AudioWorkletProcessor {
         this.targetSampleRate = targetSampleRate || 16000;
         this.resampleRatio = this.inputSampleRate / this.targetSampleRate;
         this.resampleBuffer = [];
+        this.chunkBuffer = [];
         this.lastSample = 0;
         this.fractionalIndex = 0;
         break;
       case 'STOP':
         this.isRecording = false;
+        // 남은 샘플이 있으면 마지막 청크로 전송
+        if (this.chunkBuffer.length > 0) {
+          const samples = new Float32Array(this.chunkBuffer);
+          this.port.postMessage({ type: 'AUDIO_CHUNK', samples }, [samples.buffer]);
+          this.chunkBuffer = [];
+        }
         break;
       case 'GET_SAMPLES':
         const samples = new Float32Array(this.resampleBuffer);
@@ -63,6 +73,18 @@ class ResamplerProcessor extends AudioWorkletProcessor {
           this.lastSample +
           (currentSample - this.lastSample) * this.fractionalIndex;
         this.resampleBuffer.push(interpolated);
+        this.chunkBuffer.push(interpolated);
+
+        // 청크가 가득 차면 자동 전송
+        if (this.chunkBuffer.length >= this.CHUNK_SIZE) {
+          const chunkSamples = new Float32Array(this.chunkBuffer);
+          this.port.postMessage(
+            { type: 'AUDIO_CHUNK', samples: chunkSamples },
+            [chunkSamples.buffer]
+          );
+          this.chunkBuffer = [];
+        }
+
         this.fractionalIndex += this.resampleRatio;
       }
       this.fractionalIndex -= 1;
