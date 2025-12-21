@@ -396,13 +396,12 @@ const errorLoggingEpic: RecorderEpic = (action$) =>
 
 /**
  * Epic: WebSocket 연결 해제
- * Triggers on: stopRecording, recordingError, recordingCompleted
+ * Triggers on: recordingError, recordingCompleted
  * 녹음 종료 시 WebSocket 연결을 해제
  */
 const webSocketDisconnectEpic: RecorderEpic = (action$) =>
   action$.pipe(
     ofType(
-      recorderActions.stopRecording.type,
       recorderActions.recordingError.type,
       recorderActions.recordingCompleted.type
     ),
