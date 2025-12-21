@@ -1,15 +1,13 @@
 import { useAppSelector } from '@/store';
-import { selectError, selectStatus } from '@/features/recorder/model/recorderSelectors';
+import { selectError } from '@/features/recorder/model/recorderSelectors';
 import { RecordButton } from './RecordButton';
 import { RecordingStatus } from './RecordingStatus';
-import { AudioPlayer } from './AudioPlayer';
 import { LanguageDropdown } from './LanguageDropdown';
 import { TargetLanguageDropdown } from './TargetLanguageDropdown';
 import { TranscriptDisplay } from './TranscriptDisplay';
 
 export const RecorderPanel = () => {
   const error = useAppSelector(selectError);
-  const status = useAppSelector(selectStatus);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
@@ -29,8 +27,6 @@ export const RecorderPanel = () => {
           <RecordButton />
           <RecordingStatus />
           <TranscriptDisplay />
-
-          {status === 'completed' && <AudioPlayer />}
 
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">

@@ -17,7 +17,6 @@ const createMockStore = (recorderState: Partial<RecorderState> = {}) => {
     status: 'idle',
     recordingStartTime: null,
     elapsedTime: 0,
-    audio: null,
     error: null,
     webSocketStatus: 'disconnected',
     sttStatus: 'idle',

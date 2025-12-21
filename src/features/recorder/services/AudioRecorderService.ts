@@ -3,8 +3,6 @@ import { map, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import type { Result } from '@/shared/fp';
 import { ok, err, isOk } from '@/shared/fp';
 import { requestTabCapture, getCurrentTabId } from '@/shared/messaging';
-import { encodeWav, calculateDuration } from './WavEncoder';
-import type { RecordedAudio } from '../model/types';
 
 /**
  * Audio Recorder Service
@@ -120,63 +118,28 @@ export class AudioRecorderService {
   }
 
   /**
-   * 녹음 정지 및 WAV 생성
+   * 녹음 정지
    */
-  stopRecording(): Observable<Result<Error, RecordedAudio>> {
+  stopRecording(): Observable<Result<Error, void>> {
     if (!this.workletNode || !this.isWorkletReady) {
       return of(err(new Error('Recorder is not active')));
     }
 
-    return new Observable<Result<Error, RecordedAudio>>((subscriber) => {
-      // 정지 및 최종 샘플 요청
+    return new Observable<Result<Error, void>>((subscriber) => {
+      // 정지 메시지 전송
       this.workletNode!.port.postMessage({ type: 'STOP' });
-      this.workletNode!.port.postMessage({ type: 'GET_SAMPLES' });
 
-      // 약간의 지연 후 샘플 수집 완료
+      // 약간의 지연 후 정리
       setTimeout(() => {
         try {
-          // 모든 샘플 병합
-          const totalLength = this.samplesBuffer.reduce(
-            (acc, arr) => acc + arr.length,
-            0
-          );
-          const allSamples = new Float32Array(totalLength);
-          let offset = 0;
-          for (const buffer of this.samplesBuffer) {
-            allSamples.set(buffer, offset);
-            offset += buffer.length;
-          }
-
-          // WAV 인코딩
-          const wavBlob = encodeWav(allSamples, {
-            sampleRate: this.TARGET_SAMPLE_RATE,
-            channels: 1,
-          });
-
-          const url = URL.createObjectURL(wavBlob);
-          const duration = calculateDuration(
-            allSamples.length,
-            this.TARGET_SAMPLE_RATE
-          );
-
-          const recordedAudio: RecordedAudio = {
-            blob: wavBlob,
-            url,
-            duration,
-            sampleRate: this.TARGET_SAMPLE_RATE,
-            channels: 1,
-            createdAt: Date.now(),
-          };
-
-          subscriber.next(ok(recordedAudio));
+          this.cleanup();
+          subscriber.next(ok(undefined));
           subscriber.complete();
         } catch (error) {
           subscriber.next(
             err(error instanceof Error ? error : new Error(String(error)))
           );
           subscriber.complete();
-        } finally {
-          this.cleanup();
         }
       }, 100);
     });
@@ -220,13 +183,6 @@ export class AudioRecorderService {
 
     this.isWorkletReady = false;
     this.samplesBuffer = [];
-  }
-
-  /**
-   * Blob URL 해제
-   */
-  static revokeAudioUrl(url: string): void {
-    URL.revokeObjectURL(url);
   }
 }
 

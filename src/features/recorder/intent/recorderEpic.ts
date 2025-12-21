@@ -214,11 +214,11 @@ const stopRecordingEpic: RecorderEpic = (action$) =>
             concat(
               of(recorderActions.sttStopped()),
 
-              // 녹음 정지 및 WAV 생성
+              // 녹음 정지
               recorder.stopRecording().pipe(
                 map((result) => {
                   if (isOk(result)) {
-                    return recorderActions.recordingCompleted(result.value);
+                    return recorderActions.recordingCompleted();
                   } else {
                     return recorderActions.recordingError(result.error.message);
                   }

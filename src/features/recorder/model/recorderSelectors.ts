@@ -5,7 +5,6 @@ import type { RootState } from '@/store';
 export const selectRecorderState = (state: RootState) => state.recorder;
 export const selectStatus = (state: RootState) => state.recorder.status;
 export const selectElapsedTime = (state: RootState) => state.recorder.elapsedTime;
-export const selectAudio = (state: RootState) => state.recorder.audio;
 export const selectError = (state: RootState) => state.recorder.error;
 export const selectWebSocketStatus = (state: RootState) =>
   state.recorder.webSocketStatus;
@@ -31,11 +30,6 @@ export const selectCanStopRecording = createSelector(
   (status) => status === 'recording'
 );
 
-export const selectHasRecordedAudio = createSelector(
-  [selectAudio],
-  (audio) => audio !== null
-);
-
 export const selectFormattedElapsedTime = createSelector(
   [selectElapsedTime],
   (seconds) => {
@@ -44,13 +38,6 @@ export const selectFormattedElapsedTime = createSelector(
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 );
-
-export const selectAudioDuration = createSelector([selectAudio], (audio) => {
-  if (!audio) return '00:00';
-  const mins = Math.floor(audio.duration / 60);
-  const secs = Math.floor(audio.duration % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-});
 
 // WebSocket selectors
 export const selectIsWebSocketConnected = createSelector(

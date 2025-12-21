@@ -164,18 +164,6 @@ export type WsServerMessage =
   | WsErrorMessage;
 
 /**
- * 녹음된 오디오 데이터
- */
-export interface RecordedAudio {
-  readonly blob: Blob;
-  readonly url: string;
-  readonly duration: number;
-  readonly sampleRate: number;
-  readonly channels: number;
-  readonly createdAt: number;
-}
-
-/**
  * 최종 확정된 Transcript 항목
  */
 export interface TranscriptEntry {
@@ -207,7 +195,6 @@ export interface RecorderState {
   readonly status: RecordingStatus;
   readonly recordingStartTime: number | null;
   readonly elapsedTime: number;
-  readonly audio: RecordedAudio | null;
   readonly error: string | null;
   readonly webSocketStatus: WebSocketStatus;
   readonly sttStatus: SttStatus;

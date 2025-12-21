@@ -14,7 +14,6 @@ export { recorderEpics } from './intent/recorderEpic';
 export { RecorderPanel } from './view/RecorderPanel';
 export { RecordButton } from './view/RecordButton';
 export { RecordingStatus } from './view/RecordingStatus';
-export { AudioPlayer } from './view/AudioPlayer';
 export { LanguageDropdown } from './view/LanguageDropdown';
 export { TargetLanguageDropdown } from './view/TargetLanguageDropdown';
 export { TranscriptDisplay } from './view/TranscriptDisplay';

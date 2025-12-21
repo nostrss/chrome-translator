@@ -1,7 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type {
   RecorderState,
-  RecordedAudio,
   Language,
   TranscriptEntry,
 } from './types';
@@ -10,7 +9,6 @@ const initialState: RecorderState = {
   status: 'idle',
   recordingStartTime: null,
   elapsedTime: 0,
-  audio: null,
   error: null,
   webSocketStatus: 'disconnected',
   sttStatus: 'idle',
@@ -40,7 +38,6 @@ export const recorderSlice = createSlice({
     startRecording: (state) => {
       state.status = 'requesting';
       state.error = null;
-      state.audio = null;
     },
 
     /**
@@ -69,9 +66,8 @@ export const recorderSlice = createSlice({
     /**
      * 녹음 완료 (Epic에서 호출)
      */
-    recordingCompleted: (state, action: PayloadAction<RecordedAudio>) => {
+    recordingCompleted: (state) => {
       state.status = 'completed';
-      state.audio = action.payload;
       state.recordingStartTime = null;
     },
 
@@ -91,7 +87,6 @@ export const recorderSlice = createSlice({
       state.status = 'idle';
       state.recordingStartTime = null;
       state.elapsedTime = 0;
-      state.audio = null;
       state.error = null;
       state.webSocketStatus = 'disconnected';
       state.sttStatus = 'idle';
