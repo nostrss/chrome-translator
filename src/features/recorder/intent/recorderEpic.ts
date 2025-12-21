@@ -50,7 +50,7 @@ const startRecordingEpic: RecorderEpic = (action$, state$) =>
         of(recorderActions.webSocketConnecting()),
 
         // 2. WebSocket 연결 및 프로토콜 실행
-        wsService.connect('ws://localhost:3000').pipe(
+        wsService.connect(import.meta.env.VITE_WS_URL).pipe(
           switchMap((wsResult) => {
             if (!isOk(wsResult)) {
               return of(recorderActions.recordingError('WebSocket 연결 실패'));
@@ -420,7 +420,7 @@ const fetchLanguagesEpic: RecorderEpic = (action$) =>
   action$.pipe(
     ofType(recorderActions.fetchLanguages.type),
     switchMap(() =>
-      from(fetch('http://localhost:3000/api/languages')).pipe(
+      from(fetch(`${import.meta.env.VITE_API_URL}/api/languages`)).pipe(
         switchMap((response) => {
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
