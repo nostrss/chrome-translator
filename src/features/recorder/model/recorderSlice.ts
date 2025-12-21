@@ -8,6 +8,8 @@ const initialState: RecorderState = {
   audio: null,
   error: null,
   webSocketStatus: 'disconnected',
+  sttStatus: 'idle',
+  sessionId: null,
 };
 
 export const recorderSlice = createSlice({
@@ -74,6 +76,8 @@ export const recorderSlice = createSlice({
       state.audio = null;
       state.error = null;
       state.webSocketStatus = 'disconnected';
+      state.sttStatus = 'idle';
+      state.sessionId = null;
     },
 
     /**
@@ -102,6 +106,49 @@ export const recorderSlice = createSlice({
      */
     webSocketError: (state) => {
       state.webSocketStatus = 'error';
+    },
+
+    /**
+     * STT 연결 완료 (sessionId 수신)
+     */
+    sttConnected: (state, action: PayloadAction<string>) => {
+      state.sessionId = action.payload;
+    },
+
+    /**
+     * STT 시작 중
+     */
+    sttStarting: (state) => {
+      state.sttStatus = 'starting';
+    },
+
+    /**
+     * STT 시작됨
+     */
+    sttStarted: (state) => {
+      state.sttStatus = 'active';
+    },
+
+    /**
+     * STT 정지 중
+     */
+    sttStopping: (state) => {
+      state.sttStatus = 'stopping';
+    },
+
+    /**
+     * STT 정지됨
+     */
+    sttStopped: (state) => {
+      state.sttStatus = 'stopped';
+    },
+
+    /**
+     * STT 에러
+     */
+    sttError: (state, action: PayloadAction<string>) => {
+      state.sttStatus = 'idle';
+      state.error = action.payload;
     },
   },
 });
