@@ -24,6 +24,76 @@ export type WebSocketStatus =
   | 'error';
 
 /**
+ * STT 세션 상태
+ */
+export type SttStatus =
+  | 'idle'
+  | 'starting'
+  | 'active'
+  | 'stopping'
+  | 'stopped';
+
+// ============================================
+// WebSocket Message Types (Client → Server)
+// ============================================
+
+export interface WsConnectMessage {
+  readonly event: 'connect';
+}
+
+export interface WsStartSpeechMessage {
+  readonly event: 'start_speech';
+}
+
+export interface WsAudioChunkMessage {
+  readonly event: 'audio_chunk';
+  readonly data: {
+    readonly audio: string; // BASE64 encoded Int16 PCM
+  };
+}
+
+export interface WsStopSpeechMessage {
+  readonly event: 'stop_speech';
+}
+
+export type WsClientMessage =
+  | WsConnectMessage
+  | WsStartSpeechMessage
+  | WsAudioChunkMessage
+  | WsStopSpeechMessage;
+
+// ============================================
+// WebSocket Message Types (Server → Client)
+// ============================================
+
+export interface WsConnectedMessage {
+  readonly event: 'connected';
+  readonly data: {
+    readonly sessionId: string;
+  };
+}
+
+export interface WsSpeechStartedMessage {
+  readonly event: 'speech_started';
+}
+
+export interface WsSpeechStoppedMessage {
+  readonly event: 'speech_stopped';
+}
+
+export interface WsErrorMessage {
+  readonly event: 'error';
+  readonly success: false;
+  readonly error: string;
+}
+
+export type WsServerMessage =
+  | WsConnectedMessage
+  | WsSpeechStartedMessage
+  | WsSpeechStoppedMessage
+  | WsErrorMessage;
+
+/**
  * 녹음된 오디오 데이터
  */
 export interface RecordedAudio {
@@ -45,6 +115,8 @@ export interface RecorderState {
   readonly audio: RecordedAudio | null;
   readonly error: string | null;
   readonly webSocketStatus: WebSocketStatus;
+  readonly sttStatus: SttStatus;
+  readonly sessionId: string | null;
 }
 
 /**
