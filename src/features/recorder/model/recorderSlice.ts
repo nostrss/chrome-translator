@@ -1,5 +1,10 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { RecorderState, RecordedAudio, Language } from './types';
+import type {
+  RecorderState,
+  RecordedAudio,
+  Language,
+  TranscriptEntry,
+} from './types';
 
 const initialState: RecorderState = {
   status: 'idle',
@@ -14,6 +19,10 @@ const initialState: RecorderState = {
   languagesStatus: 'idle',
   selectedLanguage: null,
   languagesError: null,
+  transcript: {
+    entries: [],
+    interimText: '',
+  },
 };
 
 export const recorderSlice = createSlice({
@@ -82,6 +91,10 @@ export const recorderSlice = createSlice({
       state.webSocketStatus = 'disconnected';
       state.sttStatus = 'idle';
       state.sessionId = null;
+      state.transcript = {
+        entries: [],
+        interimText: '',
+      };
     },
 
     /**
@@ -190,6 +203,39 @@ export const recorderSlice = createSlice({
      */
     selectLanguage: (state, action: PayloadAction<string>) => {
       state.selectedLanguage = action.payload;
+    },
+
+    /**
+     * Interim transcript 업데이트 (isFinal=false)
+     * 실시간 부분 인식 결과
+     */
+    updateInterimTranscript: (state, action: PayloadAction<string>) => {
+      state.transcript.interimText = action.payload;
+    },
+
+    /**
+     * Final transcript 추가 (isFinal=true)
+     * 확정된 인식 결과를 히스토리에 추가
+     */
+    addFinalTranscript: (state, action: PayloadAction<string>) => {
+      const entry: TranscriptEntry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        text: action.payload,
+        timestamp: Date.now(),
+      };
+      state.transcript.entries = [...state.transcript.entries, entry];
+      state.transcript.interimText = '';
+    },
+
+    /**
+     * Transcript 초기화
+     * 새 녹음 시작 또는 리셋 시 호출
+     */
+    clearTranscript: (state) => {
+      state.transcript = {
+        entries: [],
+        interimText: '',
+      };
     },
   },
 });

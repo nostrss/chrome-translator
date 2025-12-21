@@ -45,6 +45,10 @@ describe('fetchLanguagesEpic', () => {
       languagesStatus: 'idle',
       selectedLanguage: null,
       languagesError: null,
+      transcript: {
+        entries: [],
+        interimText: '',
+      },
     },
   });
 

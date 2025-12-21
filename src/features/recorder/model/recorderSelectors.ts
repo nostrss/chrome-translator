@@ -88,3 +88,17 @@ export const selectCanSelectLanguage = createSelector(
     (recStatus === 'idle' || recStatus === 'completed' || recStatus === 'error') &&
     langStatus === 'loaded'
 );
+
+// Transcript selectors
+export const selectTranscript = (state: RootState) => state.recorder.transcript;
+
+export const selectTranscriptEntries = (state: RootState) =>
+  state.recorder.transcript.entries;
+
+export const selectInterimTranscript = (state: RootState) =>
+  state.recorder.transcript.interimText;
+
+export const selectHasTranscript = createSelector(
+  [selectTranscriptEntries, selectInterimTranscript],
+  (entries, interim) => entries.length > 0 || interim.length > 0
+);

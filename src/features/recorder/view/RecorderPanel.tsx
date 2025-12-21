@@ -4,6 +4,7 @@ import { RecordButton } from './RecordButton';
 import { RecordingStatus } from './RecordingStatus';
 import { AudioPlayer } from './AudioPlayer';
 import { LanguageDropdown } from './LanguageDropdown';
+import { TranscriptDisplay } from './TranscriptDisplay';
 
 export const RecorderPanel = () => {
   const error = useAppSelector(selectError);
@@ -25,6 +26,7 @@ export const RecorderPanel = () => {
           <LanguageDropdown />
           <RecordButton />
           <RecordingStatus />
+          <TranscriptDisplay />
 
           {status === 'completed' && <AudioPlayer />}
 

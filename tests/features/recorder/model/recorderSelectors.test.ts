@@ -32,6 +32,10 @@ describe('recorderSelectors (WebSocket)', () => {
       languagesStatus: 'idle',
       selectedLanguage: null,
       languagesError: null,
+      transcript: {
+        entries: [],
+        interimText: '',
+      },
       ...overrides,
     },
   });
@@ -129,6 +133,10 @@ describe('recorderSelectors (Language)', () => {
       languagesStatus: 'idle',
       selectedLanguage: null,
       languagesError: null,
+      transcript: {
+        entries: [],
+        interimText: '',
+      },
       ...overrides,
     },
   });

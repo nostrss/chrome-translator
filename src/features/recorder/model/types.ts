@@ -122,6 +122,17 @@ export interface WsSpeechStoppedMessage {
   readonly event: 'speech_stopped';
 }
 
+/**
+ * STT 음성 인식 결과
+ */
+export interface WsSpeechResultMessage {
+  readonly event: 'speech_result';
+  readonly data: {
+    readonly transcript: string;
+    readonly isFinal: boolean;
+  };
+}
+
 export interface WsErrorMessage {
   readonly event: 'error';
   readonly success: false;
@@ -132,6 +143,7 @@ export type WsServerMessage =
   | WsConnectedMessage
   | WsSpeechStartedMessage
   | WsSpeechStoppedMessage
+  | WsSpeechResultMessage
   | WsErrorMessage;
 
 /**
@@ -144,6 +156,23 @@ export interface RecordedAudio {
   readonly sampleRate: number;
   readonly channels: number;
   readonly createdAt: number;
+}
+
+/**
+ * 최종 확정된 Transcript 항목
+ */
+export interface TranscriptEntry {
+  readonly id: string;
+  readonly text: string;
+  readonly timestamp: number;
+}
+
+/**
+ * Transcript 상태
+ */
+export interface TranscriptState {
+  readonly entries: readonly TranscriptEntry[];
+  readonly interimText: string;
 }
 
 /**
@@ -162,6 +191,7 @@ export interface RecorderState {
   readonly languagesStatus: LanguagesStatus;
   readonly selectedLanguage: string | null;
   readonly languagesError: string | null;
+  readonly transcript: TranscriptState;
 }
 
 /**

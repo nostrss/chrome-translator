@@ -13,6 +13,7 @@ import { of, concat, race, timer, from } from 'rxjs';
 import type {
   ApiResponse,
   LanguagesData,
+  WsSpeechResultMessage,
 } from '@/features/recorder/model/types';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
@@ -265,6 +266,48 @@ const serverErrorEpic: RecorderEpic = (action$) =>
   );
 
 /**
+ * Epic: Speech Result 이벤트 처리
+ * WebSocket에서 speech_result 이벤트를 수신하여 transcript 상태 업데이트
+ */
+const speechResultEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.sttStarted.type),
+    switchMap(() => {
+      const wsService = getWebSocketService();
+
+      return wsService.messages$.pipe(
+        filter((msg): msg is WsSpeechResultMessage => msg.event === 'speech_result'),
+        map((msg) => {
+          if (msg.data.isFinal) {
+            return recorderActions.addFinalTranscript(msg.data.transcript);
+          }
+          return recorderActions.updateInterimTranscript(msg.data.transcript);
+        }),
+        takeUntil(
+          action$.pipe(
+            filter(
+              (action) =>
+                action.type === recorderActions.sttStopped.type ||
+                action.type === recorderActions.recordingError.type ||
+                action.type === recorderActions.webSocketDisconnected.type
+            )
+          )
+        )
+      );
+    })
+  );
+
+/**
+ * Epic: Transcript 클리어
+ * 녹음 시작 시 이전 transcript 초기화
+ */
+const clearTranscriptOnStartEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.startRecording.type),
+    map(() => recorderActions.clearTranscript())
+  );
+
+/**
  * Epic: 경과 시간 업데이트
  * Triggers on: recordingStarted
  * Emits: updateElapsedTime every second
@@ -365,6 +408,8 @@ export const recorderEpics = [
   streamAudioChunksEpic,
   stopRecordingEpic,
   serverErrorEpic,
+  speechResultEpic,
+  clearTranscriptOnStartEpic,
   elapsedTimeEpic,
   errorLoggingEpic,
   webSocketDisconnectEpic,

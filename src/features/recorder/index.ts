@@ -16,6 +16,7 @@ export { RecordButton } from './view/RecordButton';
 export { RecordingStatus } from './view/RecordingStatus';
 export { AudioPlayer } from './view/AudioPlayer';
 export { LanguageDropdown } from './view/LanguageDropdown';
+export { TranscriptDisplay } from './view/TranscriptDisplay';
 
 // Service exports
 export {

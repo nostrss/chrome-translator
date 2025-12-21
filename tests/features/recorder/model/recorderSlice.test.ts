@@ -19,6 +19,10 @@ describe('recorderSlice', () => {
     languagesStatus: 'idle',
     selectedLanguage: null,
     languagesError: null,
+    transcript: {
+      entries: [],
+      interimText: '',
+    },
   };
 
   describe('webSocketConnecting', () => {
@@ -95,6 +99,10 @@ describe('recorderSlice', () => {
         languagesStatus: 'idle',
         selectedLanguage: null,
         languagesError: null,
+        transcript: {
+          entries: [{ id: '1', text: 'test', timestamp: Date.now() }],
+          interimText: 'partial',
+        },
       };
 
       const state = recorderReducer(

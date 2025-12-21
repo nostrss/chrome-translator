@@ -26,6 +26,10 @@ const createMockStore = (recorderState: Partial<RecorderState> = {}) => {
     languagesStatus: 'idle',
     selectedLanguage: null,
     languagesError: null,
+    transcript: {
+      entries: [],
+      interimText: '',
+    },
     ...recorderState,
   };
 
