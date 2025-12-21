@@ -111,3 +111,17 @@ export const selectHasTranscript = createSelector(
   [selectTranscriptEntries, selectInterimTranscript],
   (entries, interim) => entries.length > 0 || interim.length > 0
 );
+
+// Translation selectors
+export const selectTranslation = (state: RootState) => state.recorder.translation;
+
+export const selectTranslationEntries = (state: RootState) =>
+  state.recorder.translation.entries;
+
+export const selectInterimTranslation = (state: RootState) =>
+  state.recorder.translation.interimText;
+
+export const selectHasTranslation = createSelector(
+  [selectTranslationEntries, selectInterimTranslation],
+  (entries, interim) => entries.length > 0 || interim.length > 0
+);

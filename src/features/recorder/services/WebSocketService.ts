@@ -131,10 +131,10 @@ export class WebSocketService {
   /**
    * start_speech 메시지 전송
    */
-  sendStartSpeech(language?: string): Result<Error, void> {
+  sendStartSpeech(languageCode?: string, targetLanguageCode?: string): Result<Error, void> {
     return this.send(
-      language
-        ? { event: 'start_speech', data: { language } }
+      languageCode && targetLanguageCode
+        ? { event: 'start_speech', data: { languageCode, targetLanguageCode } }
         : { event: 'start_speech' }
     )
   }

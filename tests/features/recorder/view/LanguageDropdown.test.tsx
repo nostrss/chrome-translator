@@ -31,6 +31,10 @@ const createMockStore = (recorderState: Partial<RecorderState> = {}) => {
       entries: [],
       interimText: '',
     },
+    translation: {
+      entries: [],
+      interimText: '',
+    },
     ...recorderState,
   };
 

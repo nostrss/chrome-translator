@@ -50,6 +50,10 @@ describe('fetchLanguagesEpic', () => {
         entries: [],
         interimText: '',
       },
+      translation: {
+        entries: [],
+        interimText: '',
+      },
     },
   });
 

@@ -24,6 +24,10 @@ const initialState: RecorderState = {
     entries: [],
     interimText: '',
   },
+  translation: {
+    entries: [],
+    interimText: '',
+  },
 };
 
 export const recorderSlice = createSlice({
@@ -93,6 +97,10 @@ export const recorderSlice = createSlice({
       state.sttStatus = 'idle';
       state.sessionId = null;
       state.transcript = {
+        entries: [],
+        interimText: '',
+      };
+      state.translation = {
         entries: [],
         interimText: '',
       };
@@ -247,6 +255,34 @@ export const recorderSlice = createSlice({
      */
     clearTranscript: (state) => {
       state.transcript = {
+        entries: [],
+        interimText: '',
+      };
+    },
+
+    /**
+     * Interim translation 업데이트 (isFinal=false)
+     * 실시간 번역 결과
+     */
+    updateInterimTranslation: (state, action: PayloadAction<string>) => {
+      state.translation.interimText = action.payload;
+    },
+
+    /**
+     * Final translation 추가 (isFinal=true)
+     * 확정된 번역 결과를 히스토리에 추가
+     */
+    addFinalTranslation: (state, action: PayloadAction<string>) => {
+      state.translation.entries = [...state.translation.entries, action.payload];
+      state.translation.interimText = '';
+    },
+
+    /**
+     * Translation 초기화
+     * 새 녹음 시작 또는 리셋 시 호출
+     */
+    clearTranslation: (state) => {
+      state.translation = {
         entries: [],
         interimText: '',
       };

@@ -37,6 +37,10 @@ describe('recorderSelectors (WebSocket)', () => {
         entries: [],
         interimText: '',
       },
+      translation: {
+        entries: [],
+        interimText: '',
+      },
       ...overrides,
     },
   });
@@ -136,6 +140,10 @@ describe('recorderSelectors (Language)', () => {
       targetLanguage: null,
       languagesError: null,
       transcript: {
+        entries: [],
+        interimText: '',
+      },
+      translation: {
         entries: [],
         interimText: '',
       },

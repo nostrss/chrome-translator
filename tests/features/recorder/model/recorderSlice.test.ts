@@ -24,6 +24,10 @@ describe('recorderSlice', () => {
       entries: [],
       interimText: '',
     },
+    translation: {
+      entries: [],
+      interimText: '',
+    },
   };
 
   describe('webSocketConnecting', () => {
@@ -104,6 +108,10 @@ describe('recorderSlice', () => {
         transcript: {
           entries: [{ id: '1', text: 'test', timestamp: Date.now() }],
           interimText: 'partial',
+        },
+        translation: {
+          entries: ['test translation'],
+          interimText: 'partial translation',
         },
       };
 

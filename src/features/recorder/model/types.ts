@@ -82,7 +82,8 @@ export interface WsConnectMessage {
 export interface WsStartSpeechMessage {
   readonly event: 'start_speech';
   readonly data?: {
-    readonly language: string;
+    readonly languageCode: string;
+    readonly targetLanguageCode: string;
   };
 }
 
@@ -133,6 +134,21 @@ export interface WsSpeechResultMessage {
   };
 }
 
+/**
+ * 번역 결과
+ */
+export interface WsTranslationResultMessage {
+  readonly event: 'translation_result';
+  readonly data: {
+    readonly originalText: string;
+    readonly translatedText: string;
+    readonly isFinal: boolean;
+    readonly model: 'nmt' | 'llm';
+    readonly timestamp: number;
+  };
+  readonly success: boolean;
+}
+
 export interface WsErrorMessage {
   readonly event: 'error';
   readonly success: false;
@@ -144,6 +160,7 @@ export type WsServerMessage =
   | WsSpeechStartedMessage
   | WsSpeechStoppedMessage
   | WsSpeechResultMessage
+  | WsTranslationResultMessage
   | WsErrorMessage;
 
 /**
@@ -176,6 +193,14 @@ export interface TranscriptState {
 }
 
 /**
+ * Translation 상태
+ */
+export interface TranslationState {
+  readonly entries: readonly string[];
+  readonly interimText: string;
+}
+
+/**
  * Recorder 상태 (readonly로 불변성 보장)
  */
 export interface RecorderState {
@@ -193,6 +218,7 @@ export interface RecorderState {
   readonly targetLanguage: string | null;
   readonly languagesError: string | null;
   readonly transcript: TranscriptState;
+  readonly translation: TranslationState;
 }
 
 /**

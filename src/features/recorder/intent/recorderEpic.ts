@@ -13,7 +13,7 @@ import { of, concat, race, timer, from } from 'rxjs';
 import type {
   ApiResponse,
   LanguagesData,
-  WsSpeechResultMessage,
+  WsTranslationResultMessage,
 } from '@/features/recorder/model/types';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
@@ -43,6 +43,7 @@ const startRecordingEpic: RecorderEpic = (action$, state$) =>
       const wsService = getWebSocketService();
       const recorder = getAudioRecorderService();
       const selectedLanguage = state.recorder.selectedLanguage;
+      const targetLanguage = state.recorder.targetLanguage;
 
       return concat(
         // 1. WebSocket 연결 시작 상태
@@ -90,11 +91,12 @@ const startRecordingEpic: RecorderEpic = (action$, state$) =>
                       return concat(
                         of(recorderActions.sttStarting()),
 
-                        // start_speech 메시지 전송 (동기적으로, 선택된 언어 포함)
+                        // start_speech 메시지 전송 (동기적으로, 선택된 언어 및 번역 대상 언어 포함)
                         of(null).pipe(
                           tap(() => {
                             const speechResult = wsService.sendStartSpeech(
-                              selectedLanguage ?? undefined
+                              selectedLanguage ?? undefined,
+                              targetLanguage ?? undefined
                             );
                             if (!isOk(speechResult)) {
                               throw new Error('start_speech 메시지 전송 실패');
@@ -266,22 +268,57 @@ const serverErrorEpic: RecorderEpic = (action$) =>
   );
 
 /**
- * Epic: Speech Result 이벤트 처리
- * WebSocket에서 speech_result 이벤트를 수신하여 transcript 상태 업데이트
+ * [DEPRECATED] speechResultEpic
+ * 이전에는 speech_result 이벤트를 직접 표시했으나,
+ * 이제 translation_result로 번역된 결과만 표시하도록 변경됨
  */
-const speechResultEpic: RecorderEpic = (action$) =>
+// const speechResultEpic: RecorderEpic = (action$) =>
+//   action$.pipe(
+//     ofType(recorderActions.sttStarted.type),
+//     switchMap(() => {
+//       const wsService = getWebSocketService();
+//
+//       return wsService.messages$.pipe(
+//         filter((msg): msg is WsSpeechResultMessage => msg.event === 'speech_result'),
+//         map((msg) => {
+//           if (msg.data.isFinal) {
+//             return recorderActions.addFinalTranscript(msg.data.transcript);
+//           }
+//           return recorderActions.updateInterimTranscript(msg.data.transcript);
+//         }),
+//         takeUntil(
+//           action$.pipe(
+//             filter(
+//               (action) =>
+//                 action.type === recorderActions.sttStopped.type ||
+//                 action.type === recorderActions.recordingError.type ||
+//                 action.type === recorderActions.webSocketDisconnected.type
+//             )
+//           )
+//         )
+//       );
+//     })
+//   );
+
+/**
+ * Epic: Translation Result 이벤트 처리
+ * WebSocket에서 translation_result 이벤트를 수신하여 translation 상태 업데이트
+ * - isFinal=false: 텍스트를 계속 덮어쓰기(업데이트)
+ * - isFinal=true: 다음 문장으로 넘어감
+ */
+const translationResultEpic: RecorderEpic = (action$) =>
   action$.pipe(
     ofType(recorderActions.sttStarted.type),
     switchMap(() => {
       const wsService = getWebSocketService();
 
       return wsService.messages$.pipe(
-        filter((msg): msg is WsSpeechResultMessage => msg.event === 'speech_result'),
+        filter((msg): msg is WsTranslationResultMessage => msg.event === 'translation_result'),
         map((msg) => {
           if (msg.data.isFinal) {
-            return recorderActions.addFinalTranscript(msg.data.transcript);
+            return recorderActions.addFinalTranslation(msg.data.translatedText);
           }
-          return recorderActions.updateInterimTranscript(msg.data.transcript);
+          return recorderActions.updateInterimTranslation(msg.data.translatedText);
         }),
         takeUntil(
           action$.pipe(
@@ -305,6 +342,16 @@ const clearTranscriptOnStartEpic: RecorderEpic = (action$) =>
   action$.pipe(
     ofType(recorderActions.startRecording.type),
     map(() => recorderActions.clearTranscript())
+  );
+
+/**
+ * Epic: Translation 클리어
+ * 녹음 시작 시 이전 translation 초기화
+ */
+const clearTranslationOnStartEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.startRecording.type),
+    map(() => recorderActions.clearTranslation())
   );
 
 /**
@@ -408,8 +455,10 @@ export const recorderEpics = [
   streamAudioChunksEpic,
   stopRecordingEpic,
   serverErrorEpic,
-  speechResultEpic,
+  // speechResultEpic, // [DEPRECATED] translation_result로 대체됨
+  translationResultEpic,
   clearTranscriptOnStartEpic,
+  clearTranslationOnStartEpic,
   elapsedTimeEpic,
   errorLoggingEpic,
   webSocketDisconnectEpic,
