@@ -19,6 +19,10 @@ export class AudioRecorderService {
   private samplesBuffer: Float32Array[] = [];
   private isWorkletReady = false;
 
+  // 실시간 오디오 청크 스트림
+  private audioChunkSubject = new Subject<Float32Array>();
+  readonly audioChunks$ = this.audioChunkSubject.asObservable();
+
   private readonly TARGET_SAMPLE_RATE = 16000;
 
   /**
@@ -88,6 +92,9 @@ export class AudioRecorderService {
       this.workletNode.port.onmessage = (event) => {
         if (event.data.type === 'SAMPLES') {
           this.samplesBuffer.push(event.data.samples);
+        } else if (event.data.type === 'AUDIO_CHUNK') {
+          // 실시간 오디오 청크 emit
+          this.audioChunkSubject.next(event.data.samples);
         }
       };
 
