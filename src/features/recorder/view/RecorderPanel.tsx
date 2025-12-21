@@ -10,8 +10,8 @@ export const RecorderPanel = () => {
   const error = useAppSelector(selectError);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
-      <div className="max-w-md mx-auto">
+    <div className="h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 flex flex-col">
+      <div className="max-w-md mx-auto w-full flex flex-col flex-1 min-h-0">
         <header className="text-center mb-8">
           <h1 className="text-3xl font-bold text-indigo-600 mb-2">
             Tab Audio Recorder
@@ -21,7 +21,7 @@ export const RecorderPanel = () => {
           </p>
         </header>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col flex-1 min-h-0">
           <LanguageDropdown />
           <TargetLanguageDropdown />
           <RecordButton />
