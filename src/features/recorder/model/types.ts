@@ -15,6 +15,15 @@ export type RecordingStatus =
   | 'error';
 
 /**
+ * WebSocket 연결 상태
+ */
+export type WebSocketStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error';
+
+/**
  * 녹음된 오디오 데이터
  */
 export interface RecordedAudio {
@@ -35,6 +44,7 @@ export interface RecorderState {
   readonly elapsedTime: number;
   readonly audio: RecordedAudio | null;
   readonly error: string | null;
+  readonly webSocketStatus: WebSocketStatus;
 }
 
 /**

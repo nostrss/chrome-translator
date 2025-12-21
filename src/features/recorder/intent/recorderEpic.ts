@@ -8,11 +8,12 @@ import {
   ignoreElements,
   filter,
 } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { of, concat } from 'rxjs';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
 import { recorderActions } from '@/features/recorder/model/recorderSlice';
 import { getAudioRecorderService } from '@/features/recorder/services/AudioRecorderService';
+import { getWebSocketService } from '@/features/recorder/services/WebSocketService';
 import { isOk } from '@/shared/fp';
 
 type RecorderEpic = Epic<RootAction, RootAction, RootState>;
@@ -20,26 +21,48 @@ type RecorderEpic = Epic<RootAction, RootAction, RootState>;
 /**
  * Epic: 녹음 시작
  * Triggers on: startRecording
- * Emits: recordingStarted or recordingError
+ * Flow: WebSocket 연결 → connect 메시지 전송 → 녹음 시작
+ * Emits: webSocketConnecting, webSocketConnected, recordingStarted or recordingError
  */
 const startRecordingEpic: RecorderEpic = (action$) =>
   action$.pipe(
     ofType(recorderActions.startRecording.type),
     switchMap(() => {
+      const wsService = getWebSocketService();
       const recorder = getAudioRecorderService();
 
-      return recorder.startRecording().pipe(
-        switchMap((result) => {
-          if (isOk(result)) {
-            return of(recorderActions.recordingStarted());
-          } else {
-            return of(recorderActions.recordingError(result.error.message));
-          }
-        }),
-        catchError((error) =>
-          of(
-            recorderActions.recordingError(
-              error instanceof Error ? error.message : 'Failed to start recording'
+      return concat(
+        // 1. WebSocket 연결 시작 상태
+        of(recorderActions.webSocketConnecting()),
+        // 2. WebSocket 연결 및 녹음 시작
+        wsService.connect('ws://localhost:3000').pipe(
+          switchMap((wsResult) => {
+            if (!isOk(wsResult)) {
+              return of(recorderActions.recordingError('WebSocket 연결 실패'));
+            }
+
+            // 3. connect 메시지 전송
+            wsService.send({ event: 'connect', requestId: 'req-001' });
+
+            // 4. 녹음 시작
+            return concat(
+              of(recorderActions.webSocketConnected()),
+              recorder.startRecording().pipe(
+                switchMap((result) => {
+                  if (isOk(result)) {
+                    return of(recorderActions.recordingStarted());
+                  } else {
+                    return of(recorderActions.recordingError(result.error.message));
+                  }
+                })
+              )
+            );
+          }),
+          catchError((error) =>
+            of(
+              recorderActions.recordingError(
+                error instanceof Error ? error.message : 'Failed to start recording'
+              )
             )
           )
         )
@@ -117,10 +140,30 @@ const errorLoggingEpic: RecorderEpic = (action$) =>
     ignoreElements()
   );
 
+/**
+ * Epic: WebSocket 연결 해제
+ * Triggers on: stopRecording, recordingError, recordingCompleted
+ * 녹음 종료 시 WebSocket 연결을 해제
+ */
+const webSocketDisconnectEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(
+      recorderActions.stopRecording.type,
+      recorderActions.recordingError.type,
+      recorderActions.recordingCompleted.type
+    ),
+    tap(() => {
+      const wsService = getWebSocketService();
+      wsService.disconnect();
+    }),
+    map(() => recorderActions.webSocketDisconnected())
+  );
+
 // Export all epics as array
 export const recorderEpics = [
   startRecordingEpic,
   elapsedTimeEpic,
   stopRecordingEpic,
   errorLoggingEpic,
+  webSocketDisconnectEpic,
 ];

@@ -7,6 +7,7 @@ const initialState: RecorderState = {
   elapsedTime: 0,
   audio: null,
   error: null,
+  webSocketStatus: 'disconnected',
 };
 
 export const recorderSlice = createSlice({
@@ -72,6 +73,35 @@ export const recorderSlice = createSlice({
       state.elapsedTime = 0;
       state.audio = null;
       state.error = null;
+      state.webSocketStatus = 'disconnected';
+    },
+
+    /**
+     * WebSocket 연결 시작
+     */
+    webSocketConnecting: (state) => {
+      state.webSocketStatus = 'connecting';
+    },
+
+    /**
+     * WebSocket 연결 성공
+     */
+    webSocketConnected: (state) => {
+      state.webSocketStatus = 'connected';
+    },
+
+    /**
+     * WebSocket 연결 해제
+     */
+    webSocketDisconnected: (state) => {
+      state.webSocketStatus = 'disconnected';
+    },
+
+    /**
+     * WebSocket 연결 에러
+     */
+    webSocketError: (state) => {
+      state.webSocketStatus = 'error';
     },
   },
 });

@@ -21,3 +21,7 @@ export {
   getAudioRecorderService,
   AudioRecorderService,
 } from './services/AudioRecorderService';
+export {
+  getWebSocketService,
+  WebSocketService,
+} from './services/WebSocketService';
