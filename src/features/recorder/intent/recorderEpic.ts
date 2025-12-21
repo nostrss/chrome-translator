@@ -8,21 +8,26 @@ import {
   ignoreElements,
   filter,
 } from 'rxjs/operators';
-import { of, concat } from 'rxjs';
+import { of, concat, race, timer } from 'rxjs';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
 import { recorderActions } from '@/features/recorder/model/recorderSlice';
 import { getAudioRecorderService } from '@/features/recorder/services/AudioRecorderService';
-import { getWebSocketService } from '@/features/recorder/services/WebSocketService';
+import {
+  getWebSocketService,
+  encodeAudioChunk,
+} from '@/features/recorder/services/WebSocketService';
 import { isOk } from '@/shared/fp';
 
 type RecorderEpic = Epic<RootAction, RootAction, RootState>;
 
 /**
  * Epic: 녹음 시작
- * Triggers on: startRecording
- * Flow: WebSocket 연결 → connect 메시지 전송 → 녹음 시작
- * Emits: webSocketConnecting, webSocketConnected, recordingStarted or recordingError
+ * Flow:
+ * 1. WebSocket 연결
+ * 2. connect 메시지 전송 → connected 응답 대기
+ * 3. 오디오 녹음 시작
+ * 4. start_speech 메시지 전송 → speech_started 응답 대기
  */
 const startRecordingEpic: RecorderEpic = (action$) =>
   action$.pipe(
@@ -34,7 +39,8 @@ const startRecordingEpic: RecorderEpic = (action$) =>
       return concat(
         // 1. WebSocket 연결 시작 상태
         of(recorderActions.webSocketConnecting()),
-        // 2. WebSocket 연결 및 녹음 시작
+
+        // 2. WebSocket 연결 및 프로토콜 실행
         wsService.connect('ws://localhost:3000').pipe(
           switchMap((wsResult) => {
             if (!isOk(wsResult)) {
@@ -42,20 +48,79 @@ const startRecordingEpic: RecorderEpic = (action$) =>
             }
 
             // 3. connect 메시지 전송
-            wsService.send({ event: 'connect', requestId: 'req-001' });
+            const sendResult = wsService.sendConnect();
+            if (!isOk(sendResult)) {
+              return of(recorderActions.recordingError('connect 메시지 전송 실패'));
+            }
 
-            // 4. 녹음 시작
-            return concat(
-              of(recorderActions.webSocketConnected()),
-              recorder.startRecording().pipe(
-                switchMap((result) => {
-                  if (isOk(result)) {
-                    return of(recorderActions.recordingStarted());
-                  } else {
-                    return of(recorderActions.recordingError(result.error.message));
-                  }
-                })
+            // 4. connected 응답 대기 (5초 타임아웃)
+            return race(
+              wsService.waitForConnected(),
+              timer(5000).pipe(
+                map(() => ({ event: 'timeout' as const }))
               )
+            ).pipe(
+              switchMap((response) => {
+                if (response.event === 'timeout') {
+                  return of(recorderActions.recordingError('connected 응답 타임아웃'));
+                }
+
+                const sessionId = response.data.sessionId;
+
+                return concat(
+                  of(recorderActions.webSocketConnected()),
+                  of(recorderActions.sttConnected(sessionId)),
+
+                  // 5. 오디오 녹음 시작
+                  recorder.startRecording().pipe(
+                    switchMap((result) => {
+                      if (!isOk(result)) {
+                        return of(recorderActions.recordingError(result.error.message));
+                      }
+
+                      // 6. start_speech 메시지 전송
+                      return concat(
+                        of(recorderActions.sttStarting()),
+
+                        // start_speech 메시지 전송 (동기적으로)
+                        of(null).pipe(
+                          tap(() => {
+                            const speechResult = wsService.sendStartSpeech();
+                            if (!isOk(speechResult)) {
+                              throw new Error('start_speech 메시지 전송 실패');
+                            }
+                          }),
+                          ignoreElements()
+                        ),
+
+                        // 7. speech_started 응답 대기 (5초 타임아웃)
+                        race(
+                          wsService.waitForSpeechStarted(),
+                          timer(5000).pipe(
+                            map(() => ({ event: 'timeout' as const }))
+                          )
+                        ).pipe(
+                          switchMap((speechResponse) => {
+                            if (speechResponse.event === 'timeout') {
+                              return of(recorderActions.recordingError('speech_started 응답 타임아웃'));
+                            }
+
+                            return concat(
+                              of(recorderActions.sttStarted()),
+                              of(recorderActions.recordingStarted())
+                            );
+                          }),
+                          catchError((error) =>
+                            of(recorderActions.recordingError(
+                              error instanceof Error ? error.message : 'start_speech 실패'
+                            ))
+                          )
+                        )
+                      );
+                    })
+                  )
+                );
+              })
             );
           }),
           catchError((error) =>
@@ -63,6 +128,126 @@ const startRecordingEpic: RecorderEpic = (action$) =>
               recorderActions.recordingError(
                 error instanceof Error ? error.message : 'Failed to start recording'
               )
+            )
+          )
+        )
+      );
+    })
+  );
+
+/**
+ * Epic: 오디오 청크 스트리밍
+ * sttStarted 시 시작, audioChunks$ 구독하여 WebSocket으로 전송
+ */
+const streamAudioChunksEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.sttStarted.type),
+    switchMap(() => {
+      const recorder = getAudioRecorderService();
+      const wsService = getWebSocketService();
+
+      return recorder.audioChunks$.pipe(
+        tap((float32Samples) => {
+          // Float32 → Int16 → BASE64 변환 후 전송
+          const base64Audio = encodeAudioChunk(float32Samples);
+          const result = wsService.sendAudioChunk(base64Audio);
+          if (!isOk(result)) {
+            console.warn('[AudioChunk] 전송 실패:', result.error.message);
+          }
+        }),
+        ignoreElements(),
+        takeUntil(
+          action$.pipe(
+            filter(
+              (action) =>
+                action.type === recorderActions.stopRecording.type ||
+                action.type === recorderActions.recordingError.type
+            )
+          )
+        )
+      );
+    })
+  );
+
+/**
+ * Epic: 녹음 정지
+ * Flow:
+ * 1. stop_speech 메시지 전송 → speech_stopped 응답 대기
+ * 2. 오디오 녹음 정지 및 WAV 생성
+ */
+const stopRecordingEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.stopRecording.type),
+    switchMap(() => {
+      const wsService = getWebSocketService();
+      const recorder = getAudioRecorderService();
+
+      return concat(
+        of(recorderActions.sttStopping()),
+
+        // stop_speech 메시지 전송
+        of(null).pipe(
+          tap(() => wsService.sendStopSpeech()),
+          ignoreElements()
+        ),
+
+        // speech_stopped 응답 대기 (5초 타임아웃, 타임아웃 시에도 진행)
+        race(
+          wsService.waitForSpeechStopped(),
+          timer(5000).pipe(
+            map(() => ({ event: 'speech_stopped' as const }))
+          )
+        ).pipe(
+          switchMap(() =>
+            concat(
+              of(recorderActions.sttStopped()),
+
+              // 녹음 정지 및 WAV 생성
+              recorder.stopRecording().pipe(
+                map((result) => {
+                  if (isOk(result)) {
+                    return recorderActions.recordingCompleted(result.value);
+                  } else {
+                    return recorderActions.recordingError(result.error.message);
+                  }
+                }),
+                catchError((error) =>
+                  of(
+                    recorderActions.recordingError(
+                      error instanceof Error ? error.message : 'Failed to stop recording'
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
+    })
+  );
+
+/**
+ * Epic: 서버 에러 이벤트 처리
+ */
+const serverErrorEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.webSocketConnected.type),
+    switchMap(() => {
+      const wsService = getWebSocketService();
+
+      return wsService.messages$.pipe(
+        filter((msg) => msg.event === 'error'),
+        map((errorMsg) => {
+          if (errorMsg.event === 'error') {
+            return recorderActions.recordingError(errorMsg.error);
+          }
+          return recorderActions.recordingError('Unknown server error');
+        }),
+        takeUntil(
+          action$.pipe(
+            filter(
+              (action) =>
+                action.type === recorderActions.webSocketDisconnected.type
             )
           )
         )
@@ -91,36 +276,6 @@ const elapsedTimeEpic: RecorderEpic = (action$) =>
               (action) =>
                 action.type === recorderActions.stopRecording.type ||
                 action.type === recorderActions.recordingError.type
-            )
-          )
-        )
-      );
-    })
-  );
-
-/**
- * Epic: 녹음 정지 및 WAV 생성
- * Triggers on: stopRecording
- * Emits: recordingCompleted or recordingError
- */
-const stopRecordingEpic: RecorderEpic = (action$) =>
-  action$.pipe(
-    ofType(recorderActions.stopRecording.type),
-    switchMap(() => {
-      const recorder = getAudioRecorderService();
-
-      return recorder.stopRecording().pipe(
-        map((result) => {
-          if (isOk(result)) {
-            return recorderActions.recordingCompleted(result.value);
-          } else {
-            return recorderActions.recordingError(result.error.message);
-          }
-        }),
-        catchError((error) =>
-          of(
-            recorderActions.recordingError(
-              error instanceof Error ? error.message : 'Failed to stop recording'
             )
           )
         )
@@ -162,8 +317,10 @@ const webSocketDisconnectEpic: RecorderEpic = (action$) =>
 // Export all epics as array
 export const recorderEpics = [
   startRecordingEpic,
-  elapsedTimeEpic,
+  streamAudioChunksEpic,
   stopRecordingEpic,
+  serverErrorEpic,
+  elapsedTimeEpic,
   errorLoggingEpic,
   webSocketDisconnectEpic,
 ];
