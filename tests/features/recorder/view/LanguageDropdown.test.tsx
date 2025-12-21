@@ -25,6 +25,7 @@ const createMockStore = (recorderState: Partial<RecorderState> = {}) => {
     languages: [],
     languagesStatus: 'idle',
     selectedLanguage: null,
+    targetLanguage: null,
     languagesError: null,
     transcript: {
       entries: [],

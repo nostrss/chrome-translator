@@ -190,6 +190,7 @@ export interface RecorderState {
   readonly languages: readonly Language[];
   readonly languagesStatus: LanguagesStatus;
   readonly selectedLanguage: string | null;
+  readonly targetLanguage: string | null;
   readonly languagesError: string | null;
   readonly transcript: TranscriptState;
 }

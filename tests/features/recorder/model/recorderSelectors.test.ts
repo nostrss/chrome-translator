@@ -31,6 +31,7 @@ describe('recorderSelectors (WebSocket)', () => {
       languages: [],
       languagesStatus: 'idle',
       selectedLanguage: null,
+      targetLanguage: null,
       languagesError: null,
       transcript: {
         entries: [],
@@ -132,6 +133,7 @@ describe('recorderSelectors (Language)', () => {
       languages: [],
       languagesStatus: 'idle',
       selectedLanguage: null,
+      targetLanguage: null,
       languagesError: null,
       transcript: {
         entries: [],

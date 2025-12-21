@@ -18,6 +18,7 @@ const initialState: RecorderState = {
   languages: [],
   languagesStatus: 'idle',
   selectedLanguage: null,
+  targetLanguage: null,
   languagesError: null,
   transcript: {
     entries: [],
@@ -188,6 +189,12 @@ export const recorderSlice = createSlice({
           action.payload.find((l) => l.code === 'en-US') ?? action.payload[0];
         state.selectedLanguage = defaultLang?.code ?? null;
       }
+      // 첫 로드 시 번역 대상 기본 언어 선택 (en-US 또는 첫 번째)
+      if (action.payload.length > 0 && !state.targetLanguage) {
+        const defaultTargetLang =
+          action.payload.find((l) => l.code === 'en-US') ?? action.payload[0];
+        state.targetLanguage = defaultTargetLang?.code ?? null;
+      }
     },
 
     /**
@@ -203,6 +210,13 @@ export const recorderSlice = createSlice({
      */
     selectLanguage: (state, action: PayloadAction<string>) => {
       state.selectedLanguage = action.payload;
+    },
+
+    /**
+     * 번역 대상 언어 선택
+     */
+    selectTargetLanguage: (state, action: PayloadAction<string>) => {
+      state.targetLanguage = action.payload;
     },
 
     /**

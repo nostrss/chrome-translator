@@ -18,6 +18,7 @@ describe('recorderSlice', () => {
     languages: [],
     languagesStatus: 'idle',
     selectedLanguage: null,
+    targetLanguage: null,
     languagesError: null,
     transcript: {
       entries: [],
@@ -98,6 +99,7 @@ describe('recorderSlice', () => {
         languages: [],
         languagesStatus: 'idle',
         selectedLanguage: null,
+        targetLanguage: null,
         languagesError: null,
         transcript: {
           entries: [{ id: '1', text: 'test', timestamp: Date.now() }],

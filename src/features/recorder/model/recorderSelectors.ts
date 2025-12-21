@@ -69,6 +69,8 @@ export const selectLanguagesStatus = (state: RootState) =>
   state.recorder.languagesStatus;
 export const selectSelectedLanguage = (state: RootState) =>
   state.recorder.selectedLanguage;
+export const selectTargetLanguage = (state: RootState) =>
+  state.recorder.targetLanguage;
 export const selectLanguagesError = (state: RootState) =>
   state.recorder.languagesError;
 
@@ -83,6 +85,13 @@ export const selectIsLanguagesLoaded = createSelector(
 );
 
 export const selectCanSelectLanguage = createSelector(
+  [selectStatus, selectLanguagesStatus],
+  (recStatus, langStatus) =>
+    (recStatus === 'idle' || recStatus === 'completed' || recStatus === 'error') &&
+    langStatus === 'loaded'
+);
+
+export const selectCanSelectTargetLanguage = createSelector(
   [selectStatus, selectLanguagesStatus],
   (recStatus, langStatus) =>
     (recStatus === 'idle' || recStatus === 'completed' || recStatus === 'error') &&

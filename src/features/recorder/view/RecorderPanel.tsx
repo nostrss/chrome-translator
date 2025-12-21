@@ -4,6 +4,7 @@ import { RecordButton } from './RecordButton';
 import { RecordingStatus } from './RecordingStatus';
 import { AudioPlayer } from './AudioPlayer';
 import { LanguageDropdown } from './LanguageDropdown';
+import { TargetLanguageDropdown } from './TargetLanguageDropdown';
 import { TranscriptDisplay } from './TranscriptDisplay';
 
 export const RecorderPanel = () => {
@@ -24,6 +25,7 @@ export const RecorderPanel = () => {
 
         <div className="bg-white rounded-xl shadow-lg p-6">
           <LanguageDropdown />
+          <TargetLanguageDropdown />
           <RecordButton />
           <RecordingStatus />
           <TranscriptDisplay />
