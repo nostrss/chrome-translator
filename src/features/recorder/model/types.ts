@@ -33,6 +33,20 @@ export type SttStatus =
   | 'stopping'
   | 'stopped';
 
+/**
+ * 언어 정보
+ */
+export interface Language {
+  readonly code: string;
+  readonly name: string;
+  readonly nativeName: string;
+}
+
+/**
+ * 언어 목록 로딩 상태
+ */
+export type LanguagesStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
 // ============================================
 // WebSocket Message Types (Client → Server)
 // ============================================
@@ -43,6 +57,9 @@ export interface WsConnectMessage {
 
 export interface WsStartSpeechMessage {
   readonly event: 'start_speech';
+  readonly data?: {
+    readonly language: string;
+  };
 }
 
 export interface WsAudioChunkMessage {
@@ -117,6 +134,10 @@ export interface RecorderState {
   readonly webSocketStatus: WebSocketStatus;
   readonly sttStatus: SttStatus;
   readonly sessionId: string | null;
+  readonly languages: readonly Language[];
+  readonly languagesStatus: LanguagesStatus;
+  readonly selectedLanguage: string | null;
+  readonly languagesError: string | null;
 }
 
 /**

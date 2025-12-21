@@ -62,3 +62,29 @@ export const selectIsWebSocketConnecting = createSelector(
   [selectWebSocketStatus],
   (status) => status === 'connecting'
 );
+
+// Language selectors
+export const selectLanguages = (state: RootState) => state.recorder.languages;
+export const selectLanguagesStatus = (state: RootState) =>
+  state.recorder.languagesStatus;
+export const selectSelectedLanguage = (state: RootState) =>
+  state.recorder.selectedLanguage;
+export const selectLanguagesError = (state: RootState) =>
+  state.recorder.languagesError;
+
+export const selectIsLanguagesLoading = createSelector(
+  [selectLanguagesStatus],
+  (status) => status === 'loading'
+);
+
+export const selectIsLanguagesLoaded = createSelector(
+  [selectLanguagesStatus],
+  (status) => status === 'loaded'
+);
+
+export const selectCanSelectLanguage = createSelector(
+  [selectStatus, selectLanguagesStatus],
+  (recStatus, langStatus) =>
+    (recStatus === 'idle' || recStatus === 'completed' || recStatus === 'error') &&
+    langStatus === 'loaded'
+);

@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { RecorderState, RecordedAudio } from './types';
+import type { RecorderState, RecordedAudio, Language } from './types';
 
 const initialState: RecorderState = {
   status: 'idle',
@@ -10,6 +10,10 @@ const initialState: RecorderState = {
   webSocketStatus: 'disconnected',
   sttStatus: 'idle',
   sessionId: null,
+  languages: [],
+  languagesStatus: 'idle',
+  selectedLanguage: null,
+  languagesError: null,
 };
 
 export const recorderSlice = createSlice({
@@ -149,6 +153,43 @@ export const recorderSlice = createSlice({
     sttError: (state, action: PayloadAction<string>) => {
       state.sttStatus = 'idle';
       state.error = action.payload;
+    },
+
+    /**
+     * 언어 목록 로드 시작
+     */
+    fetchLanguages: (state) => {
+      state.languagesStatus = 'loading';
+      state.languagesError = null;
+    },
+
+    /**
+     * 언어 목록 로드 성공
+     */
+    fetchLanguagesSuccess: (state, action: PayloadAction<Language[]>) => {
+      state.languagesStatus = 'loaded';
+      state.languages = action.payload;
+      // 첫 로드 시 기본 언어 선택 (en-US 또는 첫 번째)
+      if (action.payload.length > 0 && !state.selectedLanguage) {
+        const defaultLang =
+          action.payload.find((l) => l.code === 'en-US') ?? action.payload[0];
+        state.selectedLanguage = defaultLang?.code ?? null;
+      }
+    },
+
+    /**
+     * 언어 목록 로드 실패
+     */
+    fetchLanguagesFailure: (state, action: PayloadAction<string>) => {
+      state.languagesStatus = 'error';
+      state.languagesError = action.payload;
+    },
+
+    /**
+     * 언어 선택
+     */
+    selectLanguage: (state, action: PayloadAction<string>) => {
+      state.selectedLanguage = action.payload;
     },
   },
 });

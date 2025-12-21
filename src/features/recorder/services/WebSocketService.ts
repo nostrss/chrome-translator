@@ -131,8 +131,12 @@ export class WebSocketService {
   /**
    * start_speech 메시지 전송
    */
-  sendStartSpeech(): Result<Error, void> {
-    return this.send({ event: 'start_speech' });
+  sendStartSpeech(language?: string): Result<Error, void> {
+    return this.send(
+      language
+        ? { event: 'start_speech', data: { language } }
+        : { event: 'start_speech' }
+    );
   }
 
   /**

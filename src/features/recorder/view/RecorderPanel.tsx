@@ -3,6 +3,7 @@ import { selectError, selectStatus } from '@/features/recorder/model/recorderSel
 import { RecordButton } from './RecordButton';
 import { RecordingStatus } from './RecordingStatus';
 import { AudioPlayer } from './AudioPlayer';
+import { LanguageDropdown } from './LanguageDropdown';
 
 export const RecorderPanel = () => {
   const error = useAppSelector(selectError);
@@ -21,6 +22,7 @@ export const RecorderPanel = () => {
         </header>
 
         <div className="bg-white rounded-xl shadow-lg p-6">
+          <LanguageDropdown />
           <RecordButton />
           <RecordingStatus />
 

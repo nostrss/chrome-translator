@@ -7,8 +7,10 @@ import {
   tap,
   ignoreElements,
   filter,
+  withLatestFrom,
 } from 'rxjs/operators';
-import { of, concat, race, timer } from 'rxjs';
+import { of, concat, race, timer, from } from 'rxjs';
+import type { Language } from '@/features/recorder/model/types';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
 import { recorderActions } from '@/features/recorder/model/recorderSlice';
@@ -27,14 +29,16 @@ type RecorderEpic = Epic<RootAction, RootAction, RootState>;
  * 1. WebSocket 연결
  * 2. connect 메시지 전송 → connected 응답 대기
  * 3. 오디오 녹음 시작
- * 4. start_speech 메시지 전송 → speech_started 응답 대기
+ * 4. start_speech 메시지 전송 (선택된 언어 포함) → speech_started 응답 대기
  */
-const startRecordingEpic: RecorderEpic = (action$) =>
+const startRecordingEpic: RecorderEpic = (action$, state$) =>
   action$.pipe(
     ofType(recorderActions.startRecording.type),
-    switchMap(() => {
+    withLatestFrom(state$),
+    switchMap(([, state]) => {
       const wsService = getWebSocketService();
       const recorder = getAudioRecorderService();
+      const selectedLanguage = state.recorder.selectedLanguage;
 
       return concat(
         // 1. WebSocket 연결 시작 상태
@@ -82,10 +86,12 @@ const startRecordingEpic: RecorderEpic = (action$) =>
                       return concat(
                         of(recorderActions.sttStarting()),
 
-                        // start_speech 메시지 전송 (동기적으로)
+                        // start_speech 메시지 전송 (동기적으로, 선택된 언어 포함)
                         of(null).pipe(
                           tap(() => {
-                            const speechResult = wsService.sendStartSpeech();
+                            const speechResult = wsService.sendStartSpeech(
+                              selectedLanguage ?? undefined
+                            );
                             if (!isOk(speechResult)) {
                               throw new Error('start_speech 메시지 전송 실패');
                             }
@@ -314,8 +320,36 @@ const webSocketDisconnectEpic: RecorderEpic = (action$) =>
     map(() => recorderActions.webSocketDisconnected())
   );
 
+/**
+ * Epic: 언어 목록 로드
+ * API 호출하여 언어 목록 가져오기
+ */
+const fetchLanguagesEpic: RecorderEpic = (action$) =>
+  action$.pipe(
+    ofType(recorderActions.fetchLanguages.type),
+    switchMap(() =>
+      from(fetch('http://localhost:3000/api/languages')).pipe(
+        switchMap((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          return from(response.json() as Promise<Language[]>);
+        }),
+        map((languages) => recorderActions.fetchLanguagesSuccess(languages)),
+        catchError((error) =>
+          of(
+            recorderActions.fetchLanguagesFailure(
+              error instanceof Error ? error.message : 'Failed to fetch languages'
+            )
+          )
+        )
+      )
+    )
+  );
+
 // Export all epics as array
 export const recorderEpics = [
+  fetchLanguagesEpic,
   startRecordingEpic,
   streamAudioChunksEpic,
   stopRecordingEpic,
