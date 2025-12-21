@@ -10,7 +10,10 @@ import {
   withLatestFrom,
 } from 'rxjs/operators';
 import { of, concat, race, timer, from } from 'rxjs';
-import type { Language } from '@/features/recorder/model/types';
+import type {
+  ApiResponse,
+  LanguagesData,
+} from '@/features/recorder/model/types';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
 import { recorderActions } from '@/features/recorder/model/recorderSlice';
@@ -333,7 +336,15 @@ const fetchLanguagesEpic: RecorderEpic = (action$) =>
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
-          return from(response.json() as Promise<Language[]>);
+          return from(response.json() as Promise<ApiResponse<LanguagesData>>);
+        }),
+        switchMap((result) => {
+          if (!result.success || !result.data) {
+            throw new Error(
+              result.error?.message ?? 'Failed to fetch languages'
+            );
+          }
+          return of(result.data.languages);
         }),
         map((languages) => recorderActions.fetchLanguagesSuccess(languages)),
         catchError((error) =>

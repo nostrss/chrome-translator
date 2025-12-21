@@ -48,6 +48,30 @@ export interface Language {
 export type LanguagesStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 // ============================================
+// API Response Types
+// ============================================
+
+/**
+ * API 응답 타입 (공통)
+ */
+export interface ApiResponse<T> {
+  readonly success: boolean;
+  readonly data?: T;
+  readonly error?: {
+    readonly code: string;
+    readonly message: string;
+  };
+}
+
+/**
+ * 언어 목록 API 응답 데이터
+ */
+export interface LanguagesData {
+  readonly languages: Language[];
+  readonly count: number;
+}
+
+// ============================================
 // WebSocket Message Types (Client → Server)
 // ============================================
 
