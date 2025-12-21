@@ -13,6 +13,8 @@ describe('recorderSlice', () => {
     audio: null,
     error: null,
     webSocketStatus: 'disconnected',
+    sttStatus: 'idle',
+    sessionId: null,
   };
 
   describe('webSocketConnecting', () => {
@@ -83,6 +85,8 @@ describe('recorderSlice', () => {
         audio: null,
         error: 'some error',
         webSocketStatus: 'connected',
+        sttStatus: 'active',
+        sessionId: 'test-session',
       };
 
       const state = recorderReducer(

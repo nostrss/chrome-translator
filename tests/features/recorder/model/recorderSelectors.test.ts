@@ -18,6 +18,8 @@ describe('recorderSelectors (WebSocket)', () => {
       audio: null,
       error: null,
       webSocketStatus: 'disconnected',
+      sttStatus: 'idle',
+      sessionId: null,
       ...overrides,
     },
   });

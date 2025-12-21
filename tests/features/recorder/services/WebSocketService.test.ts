@@ -115,15 +115,15 @@ describe('WebSocketService', () => {
     });
   });
 
-  describe('send', () => {
-    it('should send message when connected', () => {
+  describe('send methods', () => {
+    it('should send connect message when connected', () => {
       return new Promise<void>((done) => {
         service.connect('ws://localhost:3000').subscribe(() => {
-          const result = service.send({ event: 'test', data: 123 });
+          const result = service.sendConnect();
 
           expect(isOk(result)).toBe(true);
           expect(mockWebSocket.send).toHaveBeenCalledWith(
-            JSON.stringify({ event: 'test', data: 123 })
+            JSON.stringify({ event: 'connect' })
           );
           done();
         });
@@ -134,7 +134,7 @@ describe('WebSocketService', () => {
     });
 
     it('should return error when not connected', () => {
-      const result = service.send({ event: 'test' });
+      const result = service.sendConnect();
 
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
