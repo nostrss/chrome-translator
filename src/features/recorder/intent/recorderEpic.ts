@@ -240,20 +240,51 @@ const stopRecordingEpic: RecorderEpic = (action$) =>
 
 /**
  * Epic: 서버 에러 이벤트 처리
+ * 에러 메시지 수신 시 stopRecording 버튼과 동일하게 정상 종료 프로토콜 시도 후 에러 상태로 전환
  */
-const serverErrorEpic: RecorderEpic = (action$) =>
+const serverErrorEpic: RecorderEpic = (action$, state$) =>
   action$.pipe(
     ofType(recorderActions.webSocketConnected.type),
     switchMap(() => {
       const wsService = getWebSocketService();
+      const recorder = getAudioRecorderService();
 
       return wsService.messages$.pipe(
         filter((msg) => msg.event === 'error'),
-        map((errorMsg) => {
-          if (errorMsg.event === 'error') {
-            return recorderActions.recordingError(errorMsg.error);
+        withLatestFrom(state$),
+        switchMap(([errorMsg, state]) => {
+          const errorMessage =
+            errorMsg.event === 'error' ? errorMsg.error : 'Unknown server error';
+          const isRecording = state.recorder.status === 'recording';
+
+          // 녹음 중이 아니면 바로 에러 처리
+          if (!isRecording) {
+            return of(recorderActions.recordingError(errorMessage));
           }
-          return recorderActions.recordingError('Unknown server error');
+
+          // 녹음 중이면 정상 종료 시도 후 에러 처리
+          return concat(
+            // 1. stop_speech 전송 시도 (실패해도 무시)
+            of(null).pipe(
+              tap(() => wsService.sendStopSpeech()),
+              ignoreElements()
+            ),
+
+            // 2. speech_stopped 대기 (2초 타임아웃, 타임아웃 시에도 진행)
+            race(
+              wsService.waitForSpeechStopped(),
+              timer(2000)
+            ).pipe(
+              switchMap(() =>
+                // 3. 오디오 녹음 중지
+                recorder.stopRecording().pipe(
+                  // 4. 결과와 상관없이 recordingError dispatch
+                  map(() => recorderActions.recordingError(errorMessage)),
+                  catchError(() => of(recorderActions.recordingError(errorMessage)))
+                )
+              )
+            )
+          );
         }),
         takeUntil(
           action$.pipe(
