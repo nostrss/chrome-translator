@@ -303,8 +303,7 @@ const serverErrorEpic: RecorderEpic = (action$) =>
 /**
  * Epic: Translation Result 이벤트 처리
  * WebSocket에서 translation_result 이벤트를 수신하여 translation 상태 업데이트
- * - isFinal=false: 텍스트를 계속 덮어쓰기(업데이트)
- * - isFinal=true: 다음 문장으로 넘어감
+ * chatId를 기준으로 동일 메시지를 업데이트하거나 새로 추가
  */
 const translationResultEpic: RecorderEpic = (action$) =>
   action$.pipe(
@@ -314,12 +313,16 @@ const translationResultEpic: RecorderEpic = (action$) =>
 
       return wsService.messages$.pipe(
         filter((msg): msg is WsTranslationResultMessage => msg.event === 'translation_result'),
-        map((msg) => {
-          if (msg.data.isFinal) {
-            return recorderActions.addFinalTranslation(msg.data.translatedText);
-          }
-          return recorderActions.updateInterimTranslation(msg.data.translatedText);
-        }),
+        map((msg) =>
+          recorderActions.updateTranslation({
+            chatId: msg.data.chatId,
+            originalText: msg.data.originalText,
+            translatedText: msg.data.translatedText,
+            isFinal: msg.data.isFinal,
+            model: msg.data.model,
+            timestamp: msg.data.timestamp,
+          })
+        ),
         takeUntil(
           action$.pipe(
             filter(

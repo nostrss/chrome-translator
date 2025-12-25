@@ -105,10 +105,12 @@ export const selectTranslation = (state: RootState) => state.recorder.translatio
 export const selectTranslationEntries = (state: RootState) =>
   state.recorder.translation.entries;
 
-export const selectInterimTranslation = (state: RootState) =>
-  state.recorder.translation.interimText;
-
 export const selectHasTranslation = createSelector(
-  [selectTranslationEntries, selectInterimTranslation],
-  (entries, interim) => entries.length > 0 || interim.length > 0
+  [selectTranslationEntries],
+  (entries) => entries.length > 0
+);
+
+export const selectHasInterimTranslation = createSelector(
+  [selectTranslationEntries],
+  (entries) => entries.some((entry) => !entry.isFinal)
 );

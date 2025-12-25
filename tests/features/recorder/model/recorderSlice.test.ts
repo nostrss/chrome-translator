@@ -25,7 +25,6 @@ describe('recorderSlice', () => {
     },
     translation: {
       entries: [],
-      interimText: '',
     },
   };
 
@@ -108,8 +107,16 @@ describe('recorderSlice', () => {
           interimText: 'partial',
         },
         translation: {
-          entries: ['test translation'],
-          interimText: 'partial translation',
+          entries: [
+            {
+              chatId: 'test-chat-id',
+              originalText: 'test original',
+              translatedText: 'test translation',
+              isFinal: true,
+              model: 'nmt',
+              timestamp: Date.now(),
+            },
+          ],
         },
       };
 

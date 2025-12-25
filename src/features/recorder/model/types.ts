@@ -140,6 +140,7 @@ export interface WsSpeechResultMessage {
 export interface WsTranslationResultMessage {
   readonly event: 'translation_result';
   readonly data: {
+    readonly chatId: string;
     readonly originalText: string;
     readonly translatedText: string;
     readonly isFinal: boolean;
@@ -181,11 +182,22 @@ export interface TranscriptState {
 }
 
 /**
+ * 번역 항목 (chatId로 식별)
+ */
+export interface TranslationEntry {
+  readonly chatId: string;
+  readonly originalText: string;
+  readonly translatedText: string;
+  readonly isFinal: boolean;
+  readonly model: 'nmt' | 'llm';
+  readonly timestamp: number;
+}
+
+/**
  * Translation 상태
  */
 export interface TranslationState {
-  readonly entries: readonly string[];
-  readonly interimText: string;
+  readonly entries: readonly TranslationEntry[];
 }
 
 /**

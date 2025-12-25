@@ -3,6 +3,7 @@ import type {
   RecorderState,
   Language,
   TranscriptEntry,
+  TranslationEntry,
 } from './types';
 
 const initialState: RecorderState = {
@@ -24,7 +25,6 @@ const initialState: RecorderState = {
   },
   translation: {
     entries: [],
-    interimText: '',
   },
 };
 
@@ -97,7 +97,6 @@ export const recorderSlice = createSlice({
       };
       state.translation = {
         entries: [],
-        interimText: '',
       };
     },
 
@@ -256,20 +255,21 @@ export const recorderSlice = createSlice({
     },
 
     /**
-     * Interim translation 업데이트 (isFinal=false)
-     * 실시간 번역 결과
+     * Translation 업데이트 (chatId로 기존 항목 업데이트 또는 새 항목 추가)
      */
-    updateInterimTranslation: (state, action: PayloadAction<string>) => {
-      state.translation.interimText = action.payload;
-    },
-
-    /**
-     * Final translation 추가 (isFinal=true)
-     * 확정된 번역 결과를 히스토리에 추가
-     */
-    addFinalTranslation: (state, action: PayloadAction<string>) => {
-      state.translation.entries = [...state.translation.entries, action.payload];
-      state.translation.interimText = '';
+    updateTranslation: (state, action: PayloadAction<TranslationEntry>) => {
+      const existingIndex = state.translation.entries.findIndex(
+        (entry) => entry.chatId === action.payload.chatId
+      );
+      if (existingIndex >= 0) {
+        // 기존 항목 업데이트
+        state.translation.entries = state.translation.entries.map((entry, index) =>
+          index === existingIndex ? action.payload : entry
+        );
+      } else {
+        // 새 항목 추가
+        state.translation.entries = [...state.translation.entries, action.payload];
+      }
     },
 
     /**
@@ -279,7 +279,6 @@ export const recorderSlice = createSlice({
     clearTranslation: (state) => {
       state.translation = {
         entries: [],
-        interimText: '',
       };
     },
   },

@@ -2,14 +2,12 @@ import { useRef, useEffect } from 'react';
 import { useAppSelector } from '@/store';
 import {
   selectTranslationEntries,
-  selectInterimTranslation,
   selectHasTranslation,
   selectIsRecording,
 } from '@/features/recorder/model/recorderSelectors';
 
 export const TranscriptDisplay = () => {
   const entries = useAppSelector(selectTranslationEntries);
-  const interimText = useAppSelector(selectInterimTranslation);
   const hasTranslation = useAppSelector(selectHasTranslation);
   const isRecording = useAppSelector(selectIsRecording);
 
@@ -27,7 +25,7 @@ export const TranscriptDisplay = () => {
     if (scrollRef.current && isAtBottomRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [entries, interimText]);
+  }, [entries]);
 
   if (!hasTranslation && !isRecording) {
     return null;
@@ -40,18 +38,17 @@ export const TranscriptDisplay = () => {
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
         {entries.length > 0 && (
           <div className="space-y-1">
-            {entries.map((text, index) => (
-              <p key={index} className="text-sm text-gray-800 leading-relaxed">
-                {text}
+            {entries.map((entry) => (
+              <p
+                key={entry.chatId}
+                className={`text-sm leading-relaxed ${
+                  entry.isFinal ? 'text-gray-800' : 'text-gray-500 italic animate-pulse'
+                }`}
+              >
+                {entry.translatedText}
               </p>
             ))}
           </div>
-        )}
-
-        {interimText && (
-          <p className="text-sm text-gray-500 italic mt-1 animate-pulse">
-            {interimText}
-          </p>
         )}
 
         {!hasTranslation && isRecording && (
