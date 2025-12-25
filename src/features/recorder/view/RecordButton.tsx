@@ -4,6 +4,7 @@ import {
   selectCanStartRecording,
   selectCanStopRecording,
   selectIsProcessing,
+  selectFormattedElapsedTime,
 } from '@/features/recorder/model/recorderSelectors';
 
 export const RecordButton = () => {
@@ -11,6 +12,7 @@ export const RecordButton = () => {
   const canStart = useAppSelector(selectCanStartRecording);
   const canStop = useAppSelector(selectCanStopRecording);
   const isProcessing = useAppSelector(selectIsProcessing);
+  const elapsedTime = useAppSelector(selectFormattedElapsedTime);
 
   const handleClick = () => {
     if (canStart) {
@@ -51,6 +53,9 @@ export const RecordButton = () => {
         <div className="w-5 h-5 bg-white rounded-full" />
       )}
       {buttonText}
+      {canStop && (
+        <span className="ml-2 font-mono text-white/90">{elapsedTime}</span>
+      )}
     </button>
   );
 };
