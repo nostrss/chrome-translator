@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Chrome Recorder",
+  "name": "Tab Translator",
   "version": "1.0.0",
-  "description": "Chrome Recorder Extension",
+  "description": "Chrome Tab Translator",
   "permissions": ["sidePanel", "storage", "activeTab", "tabCapture"],
   "side_panel": {
     "default_path": "src/sidepanel/sidepanel.html"

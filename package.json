@@ -1,8 +1,8 @@
 {
-  "name": "react-mvi-template",
+  "name": "tab-translator",
   "version": "0.1.0",
   "type": "module",
-  "description": "React MVI (Model-View-Intent) pattern template with Redux Toolkit, redux-observable and functional programming utilities",
+  "description": "Chrome Tab Translator",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -14,15 +14,10 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
-    "react",
-    "mvi",
-    "model-view-intent",
-    "redux-toolkit",
-    "redux-observable",
-    "rxjs",
-    "functional-programming",
-    "typescript",
-    "template"
+    "chrome",
+    "tab",
+    "translator",
+    "chrome-extension"
   ],
   "author": "",
   "license": "MIT",
