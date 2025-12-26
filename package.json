@@ -11,7 +11,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:icons": "node src/assets/generate-icons.js"
   },
   "keywords": [
     "chrome",
@@ -28,7 +29,8 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.11.0",
     "redux-observable": "^3.0.0-rc.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "2.3.0",
