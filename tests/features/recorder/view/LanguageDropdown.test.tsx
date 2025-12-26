@@ -167,14 +167,14 @@ describe('LanguageDropdown', () => {
       expect(select.value).toBe('ko-KR');
     });
 
-    it('should show STT Language label', () => {
+    it('should show Tab Speech Language label', () => {
       renderWithStore({
         languages: mockLanguages,
         languagesStatus: 'loaded',
         selectedLanguage: 'en-US',
       });
 
-      expect(screen.getByText('STT Language')).toBeInTheDocument();
+      expect(screen.getByText('Tab Speech Language')).toBeInTheDocument();
     });
   });
 

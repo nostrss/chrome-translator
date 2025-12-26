@@ -191,10 +191,33 @@ export const recorderSlice = createSlice({
           action.payload.find((l) => l.code === 'en-US') ?? action.payload[0];
         state.selectedLanguage = defaultLang?.code ?? null;
       }
-      // 첫 로드 시 번역 대상 기본 언어 선택 (en-US 또는 첫 번째)
+      // 첫 로드 시 번역 대상 기본 언어 선택 (브라우저 언어 → en-US → 첫 번째)
       if (action.payload.length > 0 && !state.targetLanguage) {
-        const defaultTargetLang =
-          action.payload.find((l) => l.code === 'en-US') ?? action.payload[0];
+        const browserLang = navigator.language;
+
+        // 1. 정확히 일치하는 언어 찾기
+        let defaultTargetLang = action.payload.find(
+          (l) => l.code === browserLang
+        );
+
+        // 2. 없으면 언어 코드 prefix로 찾기 (ko-KR → ko로 시작하는 언어)
+        if (!defaultTargetLang) {
+          const langPrefix = browserLang.split('-')[0] ?? browserLang;
+          defaultTargetLang = action.payload.find((l) =>
+            l.code.toLowerCase().startsWith(langPrefix.toLowerCase())
+          );
+        }
+
+        // 3. 없으면 en-US로 폴백
+        if (!defaultTargetLang) {
+          defaultTargetLang = action.payload.find((l) => l.code === 'en-US');
+        }
+
+        // 4. en-US도 없으면 첫 번째 언어
+        if (!defaultTargetLang) {
+          defaultTargetLang = action.payload[0];
+        }
+
         state.targetLanguage = defaultTargetLang?.code ?? null;
       }
     },
