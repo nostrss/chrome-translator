@@ -3,7 +3,7 @@
   "name": "Tab Translator",
   "version": "1.0.0",
   "description": "Chrome Tab Translator",
-  "permissions": ["sidePanel", "storage", "activeTab", "tabCapture"],
+  "permissions": ["sidePanel", "activeTab", "tabCapture"],
   "side_panel": {
     "default_path": "src/sidepanel/sidepanel.html"
   },
