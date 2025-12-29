@@ -9,11 +9,12 @@ import {
   filter,
   withLatestFrom,
 } from 'rxjs/operators';
-import { of, concat, race, timer, from } from 'rxjs';
+import { of, concat, race, timer, from, EMPTY } from 'rxjs';
 import type {
   ApiResponse,
   LanguagesData,
   WsTranslationResultMessage,
+  WsVoiceActivityMessage,
 } from '@/features/recorder/model/types';
 import type { RootState } from '@/store';
 import type { RootAction } from '@/store/types';
@@ -429,6 +430,107 @@ const errorLoggingEpic: RecorderEpic = (action$) =>
   );
 
 /**
+ * Epic: WebSocket 연결 종료 감지
+ * WebSocket이 예기치 않게 종료되면 녹음을 중단
+ */
+const webSocketCloseEpic: RecorderEpic = (action$, state$) =>
+  action$.pipe(
+    ofType(recorderActions.webSocketConnected.type),
+    switchMap(() => {
+      const wsService = getWebSocketService();
+
+      return wsService.close$.pipe(
+        withLatestFrom(state$),
+        switchMap(([closeEvent, state]) => {
+          const { code, wasClean } = closeEvent;
+          const isRecording =
+            state.recorder.status === 'recording' ||
+            state.recorder.status === 'requesting';
+
+          // 이미 disconnected 상태면 무시 (중복 처리 방지)
+          if (state.recorder.webSocketStatus === 'disconnected') {
+            return EMPTY;
+          }
+
+          // 이미 stopping 상태면 무시 (사용자가 정지 버튼 클릭한 경우)
+          if (state.recorder.status === 'stopping') {
+            return EMPTY;
+          }
+
+          // 정상 종료(code=1000)이고 녹음 중이 아니면 상태만 업데이트
+          if (wasClean && code === 1000 && !isRecording) {
+            return of(recorderActions.webSocketDisconnected());
+          }
+
+          // 녹음 중이면 정상 종료 플로우 실행
+          if (isRecording) {
+            return of(recorderActions.stopRecording());
+          }
+
+          // 녹음 중이 아닌 비정상 종료
+          return of(recorderActions.webSocketDisconnected());
+        }),
+        // webSocketDisconnected 또는 stopRecording 액션 발생 시 구독 종료
+        takeUntil(
+          action$.pipe(
+            filter(
+              (action) =>
+                action.type === recorderActions.webSocketDisconnected.type ||
+                action.type === recorderActions.stopRecording.type
+            )
+          )
+        )
+      );
+    })
+  );
+
+/**
+ * Epic: 음성 활동 타임아웃 처리
+ * 서버에서 voice_activity timeout 이벤트를 받으면 녹음 중단
+ */
+const voiceActivityTimeoutEpic: RecorderEpic = (action$, state$) =>
+  action$.pipe(
+    ofType(recorderActions.webSocketConnected.type),
+    switchMap(() => {
+      const wsService = getWebSocketService();
+
+      return wsService.messages$.pipe(
+        filter(
+          (msg): msg is WsVoiceActivityMessage =>
+            msg.event === 'voice_activity' && msg.data.type === 'timeout'
+        ),
+        withLatestFrom(state$),
+        switchMap(([, state]) => {
+          const isRecording =
+            state.recorder.status === 'recording' ||
+            state.recorder.status === 'requesting';
+
+          // 이미 stopping 상태면 무시 (사용자가 정지 버튼 클릭한 경우)
+          if (state.recorder.status === 'stopping') {
+            return EMPTY;
+          }
+
+          // 녹음 중이면 정상 종료 플로우 실행
+          if (isRecording) {
+            return of(recorderActions.stopRecording());
+          }
+
+          return EMPTY;
+        }),
+        takeUntil(
+          action$.pipe(
+            filter(
+              (action) =>
+                action.type === recorderActions.webSocketDisconnected.type ||
+                action.type === recorderActions.stopRecording.type
+            )
+          )
+        )
+      );
+    })
+  );
+
+/**
  * Epic: WebSocket 연결 해제
  * Triggers on: recordingError, recordingCompleted
  * 녹음 종료 시 WebSocket 연결을 해제
@@ -494,5 +596,7 @@ export const recorderEpics = [
   clearTranslationOnStartEpic,
   elapsedTimeEpic,
   errorLoggingEpic,
+  webSocketCloseEpic,
+  voiceActivityTimeoutEpic,
   webSocketDisconnectEpic,
 ];

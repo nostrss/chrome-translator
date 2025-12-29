@@ -156,13 +156,27 @@ export interface WsErrorMessage {
   readonly error: string;
 }
 
+/**
+ * 음성 활동 이벤트 (timeout 등)
+ */
+export interface WsVoiceActivityMessage {
+  readonly event: 'voice_activity';
+  readonly data: {
+    readonly type: 'timeout';
+    readonly message: string;
+    readonly timestamp: number;
+  };
+  readonly success: boolean;
+}
+
 export type WsServerMessage =
   | WsConnectedMessage
   | WsSpeechStartedMessage
   | WsSpeechStoppedMessage
   | WsSpeechResultMessage
   | WsTranslationResultMessage
-  | WsErrorMessage;
+  | WsErrorMessage
+  | WsVoiceActivityMessage;
 
 /**
  * 최종 확정된 Transcript 항목

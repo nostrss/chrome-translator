@@ -18,11 +18,17 @@ export class WebSocketService {
   private socket: WebSocket | null = null
   private readonly connectionTimeout = 5000
   private messageSubject = new Subject<WsServerMessage>()
+  private closeSubject = new Subject<{ code: number; reason: string; wasClean: boolean }>()
 
   /**
    * 서버 메시지 스트림
    */
   readonly messages$ = this.messageSubject.asObservable()
+
+  /**
+   * WebSocket close 이벤트 스트림
+   */
+  readonly close$ = this.closeSubject.asObservable()
 
   /**
    * WebSocket 서버에 연결
@@ -62,8 +68,13 @@ export class WebSocketService {
           subscriber.complete()
         }
 
-        this.socket.onclose = () => {
-          console.log('[WebSocket] 연결 종료')
+        this.socket.onclose = (event) => {
+          console.log('[WebSocket] 연결 종료', { code: event.code, reason: event.reason, wasClean: event.wasClean })
+          this.closeSubject.next({
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+          })
         }
 
         // 서버 메시지 파싱 및 emit
