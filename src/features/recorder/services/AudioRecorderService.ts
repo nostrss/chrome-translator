@@ -1,8 +1,8 @@
-import { Observable, Subject, from, of, interval } from 'rxjs';
-import { map, switchMap, takeUntil, catchError } from 'rxjs/operators';
 import type { Result } from '@/shared/fp';
 import { ok, err, isOk } from '@/shared/fp';
 import { requestTabCapture, getCurrentTabId } from '@/shared/messaging';
+
+type AudioChunkHandler = (samples: Float32Array) => void
 
 /**
  * Audio Recorder Service
@@ -13,43 +13,47 @@ export class AudioRecorderService {
   private mediaStream: MediaStream | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private workletNode: AudioWorkletNode | null = null;
-  private stopSubject = new Subject<void>();
   private samplesBuffer: Float32Array[] = [];
   private isWorkletReady = false;
+  private elapsedTimeInterval: ReturnType<typeof setInterval> | null = null;
 
-  // 실시간 오디오 청크 스트림
-  private audioChunkSubject = new Subject<Float32Array>();
-  readonly audioChunks$ = this.audioChunkSubject.asObservable();
+  // 콜백 기반 핸들러
+  private audioChunkHandlers = new Set<AudioChunkHandler>();
 
   private readonly TARGET_SAMPLE_RATE = 16000;
 
   /**
+   * 오디오 청크 핸들러 등록
+   */
+  onAudioChunk(handler: AudioChunkHandler): () => void {
+    this.audioChunkHandlers.add(handler);
+    return () => this.audioChunkHandlers.delete(handler);
+  }
+
+  /**
    * 녹음 시작
    */
-  startRecording(): Observable<Result<Error, void>> {
-    return getCurrentTabId().pipe(
-      switchMap((tabIdResult) => {
-        if (!isOk(tabIdResult)) {
-          return of(err(tabIdResult.error));
-        }
-        return requestTabCapture(tabIdResult.value);
-      }),
-      switchMap((captureResult) => {
-        if (!isOk(captureResult)) {
-          return of(err(captureResult.error));
-        }
+  async startRecording(): Promise<Result<Error, void>> {
+    try {
+      const tabIdResult = await getCurrentTabId();
+      if (!isOk(tabIdResult)) {
+        return err(tabIdResult.error);
+      }
 
-        const response = captureResult.value;
-        if (!response.success) {
-          return of(err(new Error(response.error)));
-        }
+      const captureResult = await requestTabCapture(tabIdResult.value);
+      if (!isOk(captureResult)) {
+        return err(captureResult.error);
+      }
 
-        return from(this.initializeAudio(response.streamId));
-      }),
-      catchError((error) =>
-        of(err(error instanceof Error ? error : new Error(String(error))))
-      )
-    );
+      const response = captureResult.value;
+      if (!response.success) {
+        return err(new Error(response.error));
+      }
+
+      return await this.initializeAudio(response.streamId);
+    } catch (error) {
+      return err(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   /**
@@ -91,8 +95,8 @@ export class AudioRecorderService {
         if (event.data.type === 'SAMPLES') {
           this.samplesBuffer.push(event.data.samples);
         } else if (event.data.type === 'AUDIO_CHUNK') {
-          // 실시간 오디오 청크 emit
-          this.audioChunkSubject.next(event.data.samples);
+          // 실시간 오디오 청크를 핸들러들에게 전달
+          this.audioChunkHandlers.forEach(handler => handler(event.data.samples));
         }
       };
 
@@ -120,46 +124,57 @@ export class AudioRecorderService {
   /**
    * 녹음 정지
    */
-  stopRecording(): Observable<Result<Error, void>> {
-    if (!this.workletNode || !this.isWorkletReady) {
-      return of(err(new Error('Recorder is not active')));
-    }
+  stopRecording(): Promise<Result<Error, void>> {
+    return new Promise((resolve) => {
+      if (!this.workletNode || !this.isWorkletReady) {
+        resolve(err(new Error('Recorder is not active')));
+        return;
+      }
 
-    return new Observable<Result<Error, void>>((subscriber) => {
       // 정지 메시지 전송
-      this.workletNode!.port.postMessage({ type: 'STOP' });
+      this.workletNode.port.postMessage({ type: 'STOP' });
 
       // 약간의 지연 후 정리
       setTimeout(() => {
         try {
           this.cleanup();
-          subscriber.next(ok(undefined));
-          subscriber.complete();
+          resolve(ok(undefined));
         } catch (error) {
-          subscriber.next(
-            err(error instanceof Error ? error : new Error(String(error)))
-          );
-          subscriber.complete();
+          resolve(err(error instanceof Error ? error : new Error(String(error))));
         }
       }, 100);
     });
   }
 
   /**
-   * 경과 시간 Observable (매초 emit)
+   * 경과 시간 콜백 시작 (매초 호출)
    */
-  getElapsedTime$(startTime: number): Observable<number> {
-    return interval(1000).pipe(
-      map(() => Math.floor((Date.now() - startTime) / 1000)),
-      takeUntil(this.stopSubject)
-    );
+  startElapsedTimeUpdates(startTime: number, onUpdate: (seconds: number) => void): () => void {
+    this.stopElapsedTimeUpdates();
+
+    this.elapsedTimeInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      onUpdate(elapsed);
+    }, 1000);
+
+    return () => this.stopElapsedTimeUpdates();
+  }
+
+  /**
+   * 경과 시간 업데이트 중지
+   */
+  stopElapsedTimeUpdates(): void {
+    if (this.elapsedTimeInterval) {
+      clearInterval(this.elapsedTimeInterval);
+      this.elapsedTimeInterval = null;
+    }
   }
 
   /**
    * 리소스 정리
    */
   private cleanup(): void {
-    this.stopSubject.next();
+    this.stopElapsedTimeUpdates();
 
     if (this.workletNode) {
       this.workletNode.disconnect();
@@ -183,6 +198,13 @@ export class AudioRecorderService {
 
     this.isWorkletReady = false;
     this.samplesBuffer = [];
+  }
+
+  /**
+   * 모든 핸들러 제거
+   */
+  removeAllHandlers(): void {
+    this.audioChunkHandlers.clear();
   }
 }
 

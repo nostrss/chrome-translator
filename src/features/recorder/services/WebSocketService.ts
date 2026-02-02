@@ -1,5 +1,3 @@
-import { Observable, Subject } from 'rxjs'
-import { filter, take } from 'rxjs/operators'
 import type { Result } from '@/shared/fp'
 import { ok, err } from '@/shared/fp'
 import type {
@@ -10,6 +8,15 @@ import type {
   WsSpeechStoppedMessage,
 } from '../model/types'
 
+type MessageHandler = (message: WsServerMessage) => void
+type CloseHandler = (event: { code: number; reason: string; wasClean: boolean }) => void
+
+interface PendingResolver<T> {
+  resolve: (value: T) => void
+  reject: (error: Error) => void
+  timeoutId: ReturnType<typeof setTimeout>
+}
+
 /**
  * WebSocket Service
  * 녹음 시작 시 서버와 WebSocket 연결을 관리
@@ -17,28 +24,38 @@ import type {
 export class WebSocketService {
   private socket: WebSocket | null = null
   private readonly connectionTimeout = 5000
-  private messageSubject = new Subject<WsServerMessage>()
-  private closeSubject = new Subject<{ code: number; reason: string; wasClean: boolean }>()
+
+  // 콜백 기반 핸들러
+  private messageHandlers = new Set<MessageHandler>()
+  private closeHandlers = new Set<CloseHandler>()
+
+  // Promise 기반 이벤트 대기
+  private pendingResolvers = new Map<string, PendingResolver<WsServerMessage>>()
 
   /**
-   * 서버 메시지 스트림
+   * 메시지 핸들러 등록
    */
-  readonly messages$ = this.messageSubject.asObservable()
+  onMessage(handler: MessageHandler): () => void {
+    this.messageHandlers.add(handler)
+    return () => this.messageHandlers.delete(handler)
+  }
 
   /**
-   * WebSocket close 이벤트 스트림
+   * 연결 종료 핸들러 등록
    */
-  readonly close$ = this.closeSubject.asObservable()
+  onClose(handler: CloseHandler): () => void {
+    this.closeHandlers.add(handler)
+    return () => this.closeHandlers.delete(handler)
+  }
 
   /**
    * WebSocket 서버에 연결
    */
-  connect(url: string): Observable<Result<Error, void>> {
-    return new Observable<Result<Error, void>>(subscriber => {
+  connect(url: string): Promise<Result<Error, void>> {
+    return new Promise<Result<Error, void>>((resolve) => {
       // 이미 연결되어 있으면 성공 반환
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        subscriber.next(ok(undefined))
-        subscriber.complete()
+        resolve(ok(undefined))
         return
       }
 
@@ -51,85 +68,96 @@ export class WebSocketService {
         const timeoutId = setTimeout(() => {
           if (this.socket?.readyState !== WebSocket.OPEN) {
             this.socket?.close()
-            subscriber.next(err(new Error('WebSocket 연결 타임아웃')))
-            subscriber.complete()
+            resolve(err(new Error('WebSocket 연결 타임아웃')))
           }
         }, this.connectionTimeout)
 
         this.socket.onopen = () => {
           clearTimeout(timeoutId)
-          subscriber.next(ok(undefined))
-          subscriber.complete()
+          resolve(ok(undefined))
         }
 
         this.socket.onerror = () => {
           clearTimeout(timeoutId)
-          subscriber.next(err(new Error('WebSocket 연결 에러')))
-          subscriber.complete()
+          resolve(err(new Error('WebSocket 연결 에러')))
         }
 
         this.socket.onclose = (event) => {
           console.log('[WebSocket] 연결 종료', { code: event.code, reason: event.reason, wasClean: event.wasClean })
-          this.closeSubject.next({
+          const closeEvent = {
             code: event.code,
             reason: event.reason,
             wasClean: event.wasClean,
-          })
+          }
+          this.closeHandlers.forEach(handler => handler(closeEvent))
         }
 
         // 서버 메시지 파싱 및 emit
-        this.socket.onmessage = event => {
+        this.socket.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data) as WsServerMessage
             console.log('[WebSocket] 메시지 수신:', message)
-            this.messageSubject.next(message)
+
+            // 등록된 모든 핸들러에 메시지 전달
+            this.messageHandlers.forEach(handler => handler(message))
+
+            // pending resolver 확인 및 resolve
+            const resolver = this.pendingResolvers.get(message.event)
+            if (resolver) {
+              clearTimeout(resolver.timeoutId)
+              this.pendingResolvers.delete(message.event)
+              resolver.resolve(message)
+            }
           } catch (e) {
             console.error('[WebSocket] 메시지 파싱 실패:', event.data)
           }
         }
       } catch (error) {
-        subscriber.next(
-          err(error instanceof Error ? error : new Error(String(error)))
-        )
-        subscriber.complete()
+        resolve(err(error instanceof Error ? error : new Error(String(error))))
       }
     })
   }
 
   /**
-   * 특정 이벤트 타입 대기
+   * 특정 이벤트 타입 대기 (Promise 기반)
    */
   waitFor<T extends WsServerMessage['event']>(
-    eventType: T
-  ): Observable<Extract<WsServerMessage, { event: T }>> {
-    return this.messages$.pipe(
-      filter(
-        (msg): msg is Extract<WsServerMessage, { event: T }> =>
-          msg.event === eventType
-      ),
-      take(1)
-    )
+    eventType: T,
+    timeoutMs = 5000
+  ): Promise<Extract<WsServerMessage, { event: T }>> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        this.pendingResolvers.delete(eventType)
+        reject(new Error(`${eventType} 응답 타임아웃`))
+      }, timeoutMs)
+
+      this.pendingResolvers.set(eventType, {
+        resolve: resolve as (value: WsServerMessage) => void,
+        reject,
+        timeoutId,
+      })
+    })
   }
 
   /**
    * 'connected' 이벤트 대기
    */
-  waitForConnected(): Observable<WsConnectedMessage> {
-    return this.waitFor('connected')
+  waitForConnected(timeoutMs = 5000): Promise<WsConnectedMessage> {
+    return this.waitFor('connected', timeoutMs)
   }
 
   /**
    * 'speech_started' 이벤트 대기
    */
-  waitForSpeechStarted(): Observable<WsSpeechStartedMessage> {
-    return this.waitFor('speech_started')
+  waitForSpeechStarted(timeoutMs = 5000): Promise<WsSpeechStartedMessage> {
+    return this.waitFor('speech_started', timeoutMs)
   }
 
   /**
    * 'speech_stopped' 이벤트 대기
    */
-  waitForSpeechStopped(): Observable<WsSpeechStoppedMessage> {
-    return this.waitFor('speech_stopped')
+  waitForSpeechStopped(timeoutMs = 5000): Promise<WsSpeechStoppedMessage> {
+    return this.waitFor('speech_stopped', timeoutMs)
   }
 
   /**
@@ -188,6 +216,13 @@ export class WebSocketService {
    * 연결 해제
    */
   disconnect(): void {
+    // pending resolvers 정리
+    this.pendingResolvers.forEach((resolver) => {
+      clearTimeout(resolver.timeoutId)
+      resolver.reject(new Error('WebSocket disconnected'))
+    })
+    this.pendingResolvers.clear()
+
     if (this.socket) {
       this.socket.close()
       this.socket = null
@@ -199,6 +234,14 @@ export class WebSocketService {
    */
   isConnected(): boolean {
     return this.socket?.readyState === WebSocket.OPEN
+  }
+
+  /**
+   * 모든 핸들러 제거
+   */
+  removeAllHandlers(): void {
+    this.messageHandlers.clear()
+    this.closeHandlers.clear()
   }
 }
 
