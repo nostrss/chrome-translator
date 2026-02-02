@@ -1,23 +1,17 @@
-import { useAppDispatch, useAppSelector } from '@/store'
-import { recorderActions } from '@/features/recorder/model/recorderSlice'
-import {
-  selectLanguages,
-  selectTargetLanguage,
-  selectIsLanguagesLoading,
-  selectLanguagesError,
-  selectCanSelectTargetLanguage,
-} from '@/features/recorder/model/recorderSelectors'
+import { useLanguages } from '../hooks/useLanguages'
 
 export const TargetLanguageDropdown = () => {
-  const dispatch = useAppDispatch()
-  const languages = useAppSelector(selectLanguages)
-  const targetLanguage = useAppSelector(selectTargetLanguage)
-  const isLoading = useAppSelector(selectIsLanguagesLoading)
-  const error = useAppSelector(selectLanguagesError)
-  const canSelect = useAppSelector(selectCanSelectTargetLanguage)
+  const {
+    languages,
+    targetLanguage,
+    isLoading,
+    languagesError,
+    canSelectLanguage,
+    selectTargetLanguage,
+  } = useLanguages()
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch(recorderActions.selectTargetLanguage(e.target.value))
+    selectTargetLanguage(e.target.value)
   }
 
   if (isLoading) {
@@ -29,7 +23,7 @@ export const TargetLanguageDropdown = () => {
     )
   }
 
-  if (error) {
+  if (languagesError) {
     return (
       <div className='mb-4 text-gray-400 text-sm'>
         Target language unavailable
@@ -49,13 +43,13 @@ export const TargetLanguageDropdown = () => {
         id='target-language-select'
         value={targetLanguage ?? ''}
         onChange={handleChange}
-        disabled={!canSelect}
+        disabled={!canSelectLanguage}
         className={`
           w-full px-3 py-2 rounded-lg border border-gray-300
           bg-white text-gray-700
           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
           ${
-            !canSelect
+            !canSelectLanguage
               ? 'opacity-50 cursor-not-allowed bg-gray-100'
               : 'cursor-pointer'
           }

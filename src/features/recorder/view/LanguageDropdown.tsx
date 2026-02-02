@@ -1,34 +1,22 @@
-import { useEffect } from 'react'
-import { useAppDispatch, useAppSelector } from '@/store'
-import { recorderActions } from '@/features/recorder/model/recorderSlice'
-import {
-  selectLanguages,
-  selectSelectedLanguage,
-  selectIsLanguagesLoading,
-  selectLanguagesError,
-  selectCanSelectLanguage,
-} from '@/features/recorder/model/recorderSelectors'
+import { useLanguages } from '../hooks/useLanguages'
 
 export const LanguageDropdown = () => {
-  const dispatch = useAppDispatch()
-  const languages = useAppSelector(selectLanguages)
-  const selectedLanguage = useAppSelector(selectSelectedLanguage)
-  const isLoading = useAppSelector(selectIsLanguagesLoading)
-  const error = useAppSelector(selectLanguagesError)
-  const canSelect = useAppSelector(selectCanSelectLanguage)
-
-  useEffect(() => {
-    if (languages.length === 0) {
-      dispatch(recorderActions.fetchLanguages())
-    }
-  }, [dispatch, languages.length])
+  const {
+    languages,
+    selectedLanguage,
+    isLoading,
+    languagesError,
+    canSelectLanguage,
+    selectLanguage,
+    fetchLanguages,
+  } = useLanguages()
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch(recorderActions.selectLanguage(e.target.value))
+    selectLanguage(e.target.value)
   }
 
   const handleRetry = () => {
-    dispatch(recorderActions.fetchLanguages())
+    fetchLanguages()
   }
 
   if (isLoading) {
@@ -40,7 +28,7 @@ export const LanguageDropdown = () => {
     )
   }
 
-  if (error) {
+  if (languagesError) {
     return (
       <div className='mb-4 flex items-center gap-2 text-red-500 text-sm'>
         <span>Failed to load languages</span>
@@ -66,13 +54,13 @@ export const LanguageDropdown = () => {
         id='language-select'
         value={selectedLanguage ?? ''}
         onChange={handleChange}
-        disabled={!canSelect}
+        disabled={!canSelectLanguage}
         className={`
           w-full px-3 py-2 rounded-lg border border-gray-300
           bg-white text-gray-700
           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
           ${
-            !canSelect
+            !canSelectLanguage
               ? 'opacity-50 cursor-not-allowed bg-gray-100'
               : 'cursor-pointer'
           }

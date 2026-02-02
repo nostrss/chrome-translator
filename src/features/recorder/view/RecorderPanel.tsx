@@ -1,5 +1,4 @@
-import { useAppSelector } from '@/store'
-import { selectError } from '@/features/recorder/model/recorderSelectors'
+import { useRecorderStore } from '../stores/useRecorderStore'
 import { RecordButton } from './RecordButton'
 import { RecordingStatus } from './RecordingStatus'
 import { LanguageDropdown } from './LanguageDropdown'
@@ -7,7 +6,7 @@ import { TargetLanguageDropdown } from './TargetLanguageDropdown'
 import { TranscriptDisplay } from './TranscriptDisplay'
 
 export const RecorderPanel = () => {
-  const error = useAppSelector(selectError)
+  const error = useRecorderStore((state) => state.error)
 
   return (
     <div className='h-screen bg-white p-4 flex flex-col'>

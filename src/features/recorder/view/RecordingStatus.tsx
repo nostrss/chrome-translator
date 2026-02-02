@@ -1,8 +1,7 @@
-import { useAppSelector } from '@/store'
-import { selectStatus } from '@/features/recorder/model/recorderSelectors'
+import { useRecorderStore } from '../stores/useRecorderStore'
 
 export const RecordingStatus = () => {
-  const status = useAppSelector(selectStatus)
+  const status = useRecorderStore((state) => state.status)
 
   if (status === 'idle') {
     return (

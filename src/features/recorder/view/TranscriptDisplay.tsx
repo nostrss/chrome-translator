@@ -1,34 +1,30 @@
-import { useRef, useEffect } from 'react';
-import { useAppSelector } from '@/store';
-import {
-  selectTranslationEntries,
-  selectHasTranslation,
-  selectIsRecording,
-} from '@/features/recorder/model/recorderSelectors';
+import { useRef, useEffect } from 'react'
+import { useRecorderStore } from '../stores/useRecorderStore'
+import { useTranslationStore } from '../stores/useTranslationStore'
 
 export const TranscriptDisplay = () => {
-  const entries = useAppSelector(selectTranslationEntries);
-  const hasTranslation = useAppSelector(selectHasTranslation);
-  const isRecording = useAppSelector(selectIsRecording);
+  const entries = useTranslationStore((state) => state.entries)
+  const hasTranslation = useTranslationStore((state) => state.hasTranslation())
+  const isRecording = useRecorderStore((state) => state.status === 'recording')
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const isAtBottomRef = useRef(true);
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const isAtBottomRef = useRef(true)
 
   const handleScroll = () => {
     if (scrollRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-      isAtBottomRef.current = scrollTop + clientHeight >= scrollHeight - 10;
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
+      isAtBottomRef.current = scrollTop + clientHeight >= scrollHeight - 10
     }
-  };
+  }
 
   useEffect(() => {
     if (scrollRef.current && isAtBottomRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [entries]);
+  }, [entries])
 
   if (!hasTranslation && !isRecording) {
-    return null;
+    return null
   }
 
   return (
@@ -56,5 +52,5 @@ export const TranscriptDisplay = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}

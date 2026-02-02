@@ -1,36 +1,32 @@
-import { useAppDispatch, useAppSelector } from '@/store';
-import { recorderActions } from '@/features/recorder/model/recorderSlice';
-import {
-  selectCanStartRecording,
-  selectCanStopRecording,
-  selectIsProcessing,
-  selectFormattedElapsedTime,
-} from '@/features/recorder/model/recorderSelectors';
+import { useRecorder } from '../hooks/useRecorder'
 
 export const RecordButton = () => {
-  const dispatch = useAppDispatch();
-  const canStart = useAppSelector(selectCanStartRecording);
-  const canStop = useAppSelector(selectCanStopRecording);
-  const isProcessing = useAppSelector(selectIsProcessing);
-  const elapsedTime = useAppSelector(selectFormattedElapsedTime);
+  const {
+    canStartRecording,
+    canStopRecording,
+    isProcessing,
+    formattedElapsedTime,
+    startRecording,
+    stopRecording,
+  } = useRecorder()
 
   const handleClick = () => {
-    if (canStart) {
-      dispatch(recorderActions.startRecording());
-    } else if (canStop) {
-      dispatch(recorderActions.stopRecording());
+    if (canStartRecording) {
+      startRecording()
+    } else if (canStopRecording) {
+      stopRecording()
     }
-  };
+  }
 
   const buttonText = isProcessing
     ? 'Processing...'
-    : canStop
+    : canStopRecording
       ? 'Stop Recording'
-      : 'Start Recording';
+      : 'Start Recording'
 
-  const buttonStyle = canStop
+  const buttonStyle = canStopRecording
     ? 'bg-red-500 hover:bg-red-600'
-    : 'bg-indigo-500 hover:bg-indigo-600';
+    : 'bg-indigo-500 hover:bg-indigo-600'
 
   return (
     <button
@@ -47,15 +43,15 @@ export const RecordButton = () => {
     >
       {isProcessing ? (
         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-      ) : canStop ? (
+      ) : canStopRecording ? (
         <div className="w-5 h-5 bg-white rounded-sm" />
       ) : (
         <div className="w-5 h-5 bg-white rounded-full" />
       )}
       {buttonText}
-      {canStop && (
-        <span className="ml-2 font-mono text-white/90">{elapsedTime}</span>
+      {canStopRecording && (
+        <span className="ml-2 font-mono text-white/90">{formattedElapsedTime}</span>
       )}
     </button>
-  );
-};
+  )
+}
