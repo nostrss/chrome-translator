@@ -10,8 +10,8 @@ import {
   getOrElse,
   fold,
   filter,
-} from '@/shared/fp/option';
-import { pipe } from '@/shared/fp/pipe';
+} from '@/shared/utils/option';
+import { pipe } from '@/shared/utils/pipe';
 
 describe('Option', () => {
   describe('constructors', () => {

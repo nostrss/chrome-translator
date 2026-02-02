@@ -1,4 +1,4 @@
-import { type Option, some, none } from '@/shared/fp/option';
+import { type Option, some, none } from './option';
 
 /**
  * 배열 FP 유틸리티

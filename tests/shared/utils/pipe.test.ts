@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pipe, flow } from '@/shared/fp/pipe';
+import { pipe, flow } from '@/shared/utils/pipe';
 
 describe('pipe', () => {
   it('should return the value when no functions provided', () => {
