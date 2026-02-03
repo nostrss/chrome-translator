@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WebSocketService, getWebSocketService } from '@/features/recorder/services/WebSocketService';
-import { isOk, isErr } from '@/shared/fp';
+import { isOk, isErr } from '@/shared/utils';
 
 describe('WebSocketService', () => {
   let service: WebSocketService;
