@@ -1,7 +1,7 @@
 import type {
   RequestTabCaptureMessage,
   TabCaptureResponse,
-} from '@/shared/messaging/types';
+} from '@/chrome/messaging/types';
 
 // 툴바 아이콘 클릭 시 Side Panel 열기
 chrome.action.onClicked.addListener((tab) => {
