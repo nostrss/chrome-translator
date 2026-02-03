@@ -1,5 +1,5 @@
-import type { Result } from '@/shared/fp';
-import { ok, err } from '@/shared/fp';
+import type { Result } from '@/shared/utils';
+import { ok, err } from '@/shared/utils';
 import type { TabCaptureResponse, RequestTabCaptureMessage } from './types';
 
 /**
