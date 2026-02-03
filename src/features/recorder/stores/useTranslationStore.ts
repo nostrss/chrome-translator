@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { TranslationEntry } from '../model/types'
+import type { TranslationEntry } from '../types'
 
 interface TranslationState {
   entries: readonly TranslationEntry[]

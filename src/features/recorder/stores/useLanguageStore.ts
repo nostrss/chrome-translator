@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Language, LanguagesStatus } from '../model/types'
+import type { Language, LanguagesStatus } from '../types'
 
 interface LanguageState {
   languages: readonly Language[]

@@ -4,11 +4,11 @@ import { useLanguageStore } from '../stores/useLanguageStore'
 import { useTranslationStore } from '../stores/useTranslationStore'
 import { getWebSocketService, encodeAudioChunk } from '../services/WebSocketService'
 import { getAudioRecorderService } from '../services/AudioRecorderService'
-import { isOk } from '@/shared/fp'
+import { isOk } from '@/shared/utils'
 import type {
   WsTranslationResultMessage,
   WsVoiceActivityMessage,
-} from '../model/types'
+} from '../types'
 
 export const useRecorder = () => {
   const {

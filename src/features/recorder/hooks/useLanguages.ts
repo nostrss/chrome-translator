@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useLanguageStore } from '../stores/useLanguageStore'
 import { useRecorderStore } from '../stores/useRecorderStore'
-import type { ApiResponse, LanguagesData } from '../model/types'
+import type { ApiResponse, LanguagesData } from '../types'
 
 export const useLanguages = () => {
   const {

@@ -1,6 +1,6 @@
-import type { Result } from '@/shared/fp';
-import { ok, err, isOk } from '@/shared/fp';
-import { requestTabCapture, getCurrentTabId } from '@/shared/messaging';
+import type { Result } from '@/shared/utils';
+import { ok, err, isOk } from '@/shared/utils';
+import { requestTabCapture, getCurrentTabId } from '@/chrome/messaging';
 
 type AudioChunkHandler = (samples: Float32Array) => void
 

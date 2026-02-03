@@ -1,12 +1,12 @@
-import type { Result } from '@/shared/fp'
-import { ok, err } from '@/shared/fp'
+import type { Result } from '@/shared/utils'
+import { ok, err } from '@/shared/utils'
 import type {
   WsServerMessage,
   WsClientMessage,
   WsConnectedMessage,
   WsSpeechStartedMessage,
   WsSpeechStoppedMessage,
-} from '../model/types'
+} from '../types'
 
 type MessageHandler = (message: WsServerMessage) => void
 type CloseHandler = (event: { code: number; reason: string; wasClean: boolean }) => void

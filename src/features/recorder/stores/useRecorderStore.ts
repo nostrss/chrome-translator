@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { RecordingStatus } from '../model/types'
+import type { RecordingStatus } from '../types'
 
 interface RecorderState {
   status: RecordingStatus
