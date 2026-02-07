@@ -73,7 +73,10 @@ export const useRecorder = () => {
       }
 
       // 3. 오디오 녹음 중지
-      await recorder.stopRecording()
+      const stopResult = await recorder.stopRecording()
+      if (!isOk(stopResult)) {
+        throw stopResult.error
+      }
 
       // 4. 정리
       cleanup()

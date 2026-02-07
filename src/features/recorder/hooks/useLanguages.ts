@@ -24,6 +24,11 @@ export const useLanguages = () => {
 
   // Fetch languages
   const fetchLanguages = useCallback(async () => {
+    const { languagesStatus: currentStatus } = useLanguageStore.getState()
+    if (currentStatus === 'loading') {
+      return
+    }
+
     setLoading()
 
     try {
