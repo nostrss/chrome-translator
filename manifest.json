@@ -1,17 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Tab Translator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Chrome Tab Translator",
   "permissions": ["sidePanel", "activeTab", "tabCapture"],
   "side_panel": {
-    "default_path": "src/sidepanel/sidepanel.html"
+    "default_path": "src/chrome/sidepanel/sidepanel.html"
   },
   "action": {
     "default_title": "Open Side Panel"
   },
   "background": {
-    "service_worker": "src/background/service-worker.ts",
+    "service_worker": "src/chrome/background/service-worker.ts",
     "type": "module"
   },
   "icons": {

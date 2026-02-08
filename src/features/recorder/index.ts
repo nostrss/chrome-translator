@@ -1,22 +1,23 @@
-// Model exports
-export * from './model/types';
+// Types
+export * from './types';
+
+// Stores
 export {
-  recorderActions,
-  recorderReducer,
-  type RecorderAction,
-} from './model/recorderSlice';
-export * from './model/recorderSelectors';
+  useRecorderStore,
+  useLanguageStore,
+  useTranslationStore,
+} from './stores';
 
-// Intent exports
-export { recorderEpics } from './intent/recorderEpic';
+// Hooks
+export { useRecorder, useLanguages } from './hooks';
 
-// View exports
-export { RecorderPanel } from './view/RecorderPanel';
-export { RecordButton } from './view/RecordButton';
-export { RecordingStatus } from './view/RecordingStatus';
-export { LanguageDropdown } from './view/LanguageDropdown';
-export { TargetLanguageDropdown } from './view/TargetLanguageDropdown';
-export { TranscriptDisplay } from './view/TranscriptDisplay';
+// Components exports
+export { RecorderPanel } from './components/RecorderPanel';
+export { RecordButton } from './components/RecordButton';
+export { RecordingStatus } from './components/RecordingStatus';
+export { LanguageDropdown } from './components/LanguageDropdown';
+export { TargetLanguageDropdown } from './components/TargetLanguageDropdown';
+export { TranscriptDisplay } from './components/TranscriptDisplay';
 
 // Service exports
 export {
