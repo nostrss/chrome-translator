@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { TranslationModeSelector } from '@/components/TranslationModeSelector';
@@ -24,9 +24,22 @@ const queryClient = new QueryClient({
 function SidePanel() {
   const [targetLanguage, setTargetLanguage] = useState('en-US');
   const [translationMode, setTranslationMode] = useState<TranslationMode>('standard');
+  const [initialized, setInitialized] = useState(false);
 
   const { status, error, start, stop, reset } = useRecorder();
   const { data: translationLanguages, isLoading: transLoading } = useTranslationLanguages();
+
+  useEffect(() => {
+    if (!initialized && translationLanguages?.length) {
+      const browserLang = navigator.language;
+      const prefix = browserLang.split('-')[0];
+      const match = translationLanguages.find(
+        (l) => l.code === browserLang || l.code.startsWith(prefix),
+      );
+      if (match) setTargetLanguage(match.code);
+      setInitialized(true);
+    }
+  }, [translationLanguages, initialized]);
 
   const isActive = status === 'CONNECTING' || status === 'CONNECTED' || status === 'RECORDING';
 
