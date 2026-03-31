@@ -6,56 +6,76 @@ describe('useTranslationStore', () => {
     useTranslationStore.getState().clear();
   });
 
-  it('sets interim transcript', () => {
-    useTranslationStore.getState().setInterimTranscript('hello');
-    expect(useTranslationStore.getState().interimTranscript).toBe('hello');
-  });
-
-  it('adds final segment and clears interim', () => {
-    useTranslationStore.getState().setInterimTranscript('hello world');
-    useTranslationStore.getState().addFinalSegment('hello world');
+  it('adds new segment on first upsertTranscript', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', 'hello', false);
 
     const state = useTranslationStore.getState();
-    expect(state.interimTranscript).toBe('');
     expect(state.segments).toHaveLength(1);
-    expect(state.segments[0].transcript).toBe('hello world');
-    expect(state.segments[0].translation).toBe('');
+    expect(state.segments[0].segmentId).toBe('seg-0');
+    expect(state.segments[0].transcript).toBe('hello');
+    expect(state.segments[0].isFinal).toBe(false);
   });
 
-  it('updates final translation on last segment', () => {
-    useTranslationStore.getState().addFinalSegment('안녕하세요');
-    useTranslationStore.getState().updateFinalTranslation('안녕하세요', 'Hello');
+  it('overwrites transcript for same segmentId', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', 'hel', false);
+    useTranslationStore.getState().upsertTranscript('seg-0', 'hello world', false);
+
+    const state = useTranslationStore.getState();
+    expect(state.segments).toHaveLength(1);
+    expect(state.segments[0].transcript).toBe('hello world');
+  });
+
+  it('creates new line for different segmentId', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', 'first', true);
+    useTranslationStore.getState().upsertTranscript('seg-1', 'second', false);
+
+    const state = useTranslationStore.getState();
+    expect(state.segments).toHaveLength(2);
+    expect(state.segments[0].transcript).toBe('first');
+    expect(state.segments[1].transcript).toBe('second');
+  });
+
+  it('marks segment as final when isFinal is true', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', 'hello', false);
+    useTranslationStore.getState().upsertTranscript('seg-0', 'hello world', true);
+
+    const state = useTranslationStore.getState();
+    expect(state.segments[0].isFinal).toBe(true);
+    expect(state.segments[0].transcript).toBe('hello world');
+  });
+
+  it('upserts translation by segmentId', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', '안녕하세요', true);
+    useTranslationStore.getState().upsertTranslation('seg-0', 'Hello', true);
 
     const state = useTranslationStore.getState();
     expect(state.segments[0].translation).toBe('Hello');
   });
 
-  it('matches translation to correct segment by originalText', () => {
-    useTranslationStore.getState().addFinalSegment('First sentence');
-    useTranslationStore.getState().addFinalSegment('Second sentence');
-    useTranslationStore.getState().updateFinalTranslation('First sentence', '첫 번째 문장');
+  it('updates translation for correct segment among multiple', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', 'First', true);
+    useTranslationStore.getState().upsertTranscript('seg-1', 'Second', true);
+    useTranslationStore.getState().upsertTranslation('seg-0', '첫 번째', true);
 
     const state = useTranslationStore.getState();
-    expect(state.segments[0].translation).toBe('첫 번째 문장');
+    expect(state.segments[0].translation).toBe('첫 번째');
     expect(state.segments[1].translation).toBe('');
   });
 
-  it('falls back to last segment when originalText not found', () => {
-    useTranslationStore.getState().addFinalSegment('Some text');
-    useTranslationStore.getState().updateFinalTranslation('Unknown text', 'Fallback');
+  it('ignores upsertTranslation if segmentId not found', () => {
+    useTranslationStore.getState().upsertTranscript('seg-0', 'test', true);
+    useTranslationStore.getState().upsertTranslation('seg-unknown', 'translated', true);
 
     const state = useTranslationStore.getState();
-    expect(state.segments[0].translation).toBe('Fallback');
+    expect(state.segments[0].translation).toBe('');
   });
 
   it('clears all state', () => {
-    useTranslationStore.getState().addFinalSegment('test');
-    useTranslationStore.getState().setInterimTranscript('interim');
+    useTranslationStore.getState().upsertTranscript('seg-0', 'test', true);
+    useTranslationStore.getState().upsertTranslation('seg-0', 'translated', true);
     useTranslationStore.getState().clear();
 
     const state = useTranslationStore.getState();
     expect(state.segments).toHaveLength(0);
-    expect(state.interimTranscript).toBe('');
-    expect(state.interimTranslation).toBe('');
   });
 });

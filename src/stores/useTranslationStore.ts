@@ -1,50 +1,54 @@
 import { create } from 'zustand';
 
 export interface TranslationSegment {
+  segmentId: string;
   transcript: string;
   translation: string;
+  isFinal: boolean;
   timestamp: number;
 }
 
 interface TranslationState {
-  interimTranscript: string;
-  interimTranslation: string;
   segments: TranslationSegment[];
-  setInterimTranscript: (text: string) => void;
-  setInterimTranslation: (original: string, translated: string) => void;
-  addFinalSegment: (transcript: string) => void;
-  updateFinalTranslation: (original: string, translated: string) => void;
+  upsertTranscript: (segmentId: string, transcript: string, isFinal: boolean) => void;
+  upsertTranslation: (segmentId: string, translatedText: string, isFinal: boolean) => void;
   clear: () => void;
 }
 
 export const useTranslationStore = create<TranslationState>((set) => ({
-  interimTranscript: '',
-  interimTranslation: '',
   segments: [],
 
-  setInterimTranscript: (text) => set({ interimTranscript: text }),
-
-  setInterimTranslation: (_original, translated) => set({ interimTranslation: translated }),
-
-  addFinalSegment: (transcript) =>
-    set((state) => ({
-      interimTranscript: '',
-      segments: [
-        ...state.segments,
-        { transcript, translation: '', timestamp: Date.now() },
-      ],
-    })),
-
-  updateFinalTranslation: (original, translated) =>
+  upsertTranscript: (segmentId, transcript, isFinal) =>
     set((state) => {
       const segments = [...state.segments];
-      const index = segments.findLastIndex((s) => s.transcript === original);
-      const target = index !== -1 ? index : segments.length - 1;
-      if (target >= 0) {
-        segments[target] = { ...segments[target], translation: translated };
+      const index = segments.findIndex((s) => s.segmentId === segmentId);
+      if (index !== -1) {
+        segments[index] = { ...segments[index], transcript, isFinal };
+      } else {
+        segments.push({
+          segmentId,
+          transcript,
+          translation: '',
+          isFinal,
+          timestamp: Date.now(),
+        });
       }
-      return { segments, interimTranslation: '' };
+      return { segments };
     }),
 
-  clear: () => set({ interimTranscript: '', interimTranslation: '', segments: [] }),
+  upsertTranslation: (segmentId, translatedText, isFinal) =>
+    set((state) => {
+      const segments = [...state.segments];
+      const index = segments.findIndex((s) => s.segmentId === segmentId);
+      if (index !== -1) {
+        segments[index] = {
+          ...segments[index],
+          translation: translatedText,
+          isFinal: isFinal || segments[index].isFinal,
+        };
+      }
+      return { segments };
+    }),
+
+  clear: () => set({ segments: [] }),
 }));

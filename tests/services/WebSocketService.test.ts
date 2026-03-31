@@ -73,9 +73,9 @@ describe('WebSocketService', () => {
       mockWs.simulateMessage({
         event: 'speech_result',
         success: true,
-        data: { transcript: 'hello', isFinal: true, timestamp: 1 },
+        data: { segmentId: 'seg-0', transcript: 'hello', isFinal: true, timestamp: 1 },
       });
-      expect(onSpeechResult).toHaveBeenCalledWith('hello', true);
+      expect(onSpeechResult).toHaveBeenCalledWith('seg-0', 'hello', true);
     });
   });
 
@@ -98,12 +98,12 @@ describe('WebSocketService', () => {
     service.connect('ws://localhost:8080');
     await vi.waitFor(() => expect(mockWs).toBeDefined());
 
-    service.startSpeech('ko-KR', 'en-US', 'standard');
+    service.startSpeech('en-US', 'standard');
 
     const sent = mockWs.sent.map((s) => JSON.parse(s));
     expect(sent).toContainEqual({
       event: 'start_speech',
-      data: { languageCode: 'ko-KR', targetLanguageCode: 'en-US', translationMode: 'standard' },
+      data: { targetLanguageCode: 'en-US', translationMode: 'standard' },
     });
   });
 });

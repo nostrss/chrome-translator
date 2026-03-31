@@ -13,10 +13,8 @@ export function useRecorder() {
 
   const { status, error, setStatus, setSessionId, setError, reset } = useRecorderStore();
   const {
-    setInterimTranscript,
-    setInterimTranslation,
-    addFinalSegment,
-    updateFinalTranslation,
+    upsertTranscript,
+    upsertTranslation,
     clear,
   } = useTranslationStore();
 
@@ -28,7 +26,7 @@ export function useRecorder() {
   }, []);
 
   const start = useCallback(
-    (sourceLanguage: string, targetLanguage: string, translationMode: TranslationMode) => {
+    (targetLanguage: string, translationMode: TranslationMode) => {
       cleanup();
       setStatus('CONNECTING');
 
@@ -45,7 +43,7 @@ export function useRecorder() {
         onConnected: (sessionId) => {
           setSessionId(sessionId);
           setStatus('CONNECTED');
-          ws.startSpeech(sourceLanguage, targetLanguage, translationMode);
+          ws.startSpeech(targetLanguage, translationMode);
         },
         onSpeechStarted: async () => {
           try {
@@ -58,19 +56,11 @@ export function useRecorder() {
             setStatus('STOPPED');
           }
         },
-        onSpeechResult: (transcript, isFinal) => {
-          if (isFinal) {
-            addFinalSegment(transcript);
-          } else {
-            setInterimTranscript(transcript);
-          }
+        onSpeechResult: (segmentId, transcript, isFinal) => {
+          upsertTranscript(segmentId, transcript, isFinal);
         },
-        onTranslationResult: (original, translated, isFinal) => {
-          if (isFinal) {
-            updateFinalTranslation(original, translated);
-          } else {
-            setInterimTranslation(original, translated);
-          }
+        onTranslationResult: (segmentId, _original, translated, isFinal) => {
+          upsertTranslation(segmentId, translated, isFinal);
         },
         onSpeechStopped: () => {
           setStatus('STOPPED');
@@ -92,7 +82,7 @@ export function useRecorder() {
 
       ws.connect(WS_URL);
     },
-    [cleanup, setStatus, setSessionId, setError, setInterimTranscript, setInterimTranslation, addFinalSegment, updateFinalTranslation],
+    [cleanup, setStatus, setSessionId, setError, upsertTranscript, upsertTranslation],
   );
 
   const stop = useCallback(() => {

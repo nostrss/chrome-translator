@@ -9,7 +9,7 @@ import { TranscriptPanel } from '@/components/TranscriptPanel';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useRecorder } from '@/hooks/useRecorder';
-import { useSttLanguages, useTranslationLanguages } from '@/hooks/useLanguages';
+import { useTranslationLanguages } from '@/hooks/useLanguages';
 import type { TranslationMode } from '@/types/websocket';
 
 const queryClient = new QueryClient({
@@ -22,18 +22,16 @@ const queryClient = new QueryClient({
 });
 
 function SidePanel() {
-  const [sourceLanguage, setSourceLanguage] = useState('ko-KR');
   const [targetLanguage, setTargetLanguage] = useState('en-US');
   const [translationMode, setTranslationMode] = useState<TranslationMode>('standard');
 
   const { status, error, start, stop, reset } = useRecorder();
-  const { data: sttLanguages, isLoading: sttLoading } = useSttLanguages();
   const { data: translationLanguages, isLoading: transLoading } = useTranslationLanguages();
 
   const isActive = status === 'CONNECTING' || status === 'CONNECTED' || status === 'RECORDING';
 
   const handleStart = () => {
-    start(sourceLanguage, targetLanguage, translationMode);
+    start(targetLanguage, translationMode);
   };
 
   const handleDismissError = () => {
@@ -50,14 +48,6 @@ function SidePanel() {
       </header>
 
       <div className="flex flex-col gap-3 pb-4">
-        <LanguageSelector
-          label="Source Language"
-          languages={sttLanguages ?? []}
-          value={sourceLanguage}
-          onChange={setSourceLanguage}
-          isLoading={sttLoading}
-          disabled={isActive}
-        />
         <LanguageSelector
           label="Target Language"
           languages={translationLanguages ?? []}

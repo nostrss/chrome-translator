@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { useTranslationStore } from '@/stores/useTranslationStore';
 
 export function TranscriptPanel() {
-  const { segments, interimTranscript, interimTranslation } = useTranslationStore();
+  const { segments } = useTranslationStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
@@ -21,11 +21,9 @@ export function TranscriptPanel() {
     if (isNearBottomRef.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [segments.length, interimTranscript]);
+  }, [segments]);
 
-  const isEmpty = segments.length === 0 && !interimTranscript;
-
-  if (isEmpty) {
+  if (segments.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-sm text-muted-foreground">
@@ -41,33 +39,23 @@ export function TranscriptPanel() {
       onScroll={checkIfNearBottom}
       className="flex flex-1 flex-col gap-2 overflow-y-auto"
     >
-      {segments.map((segment, i) => (
-        <Card key={i}>
+      {segments.map((segment) => (
+        <Card key={segment.segmentId} className={segment.isFinal ? '' : 'border-dashed'}>
           <CardContent className="space-y-2 p-3">
-            <p className="text-sm">{segment.transcript}</p>
+            <p className={`text-sm ${segment.isFinal ? '' : 'text-muted-foreground'}`}>
+              {segment.transcript}
+            </p>
             {segment.translation && (
               <>
                 <Separator />
-                <p className="text-sm text-muted-foreground">{segment.translation}</p>
+                <p className={`text-sm ${segment.isFinal ? 'text-muted-foreground' : 'text-muted-foreground/70'}`}>
+                  {segment.translation}
+                </p>
               </>
             )}
           </CardContent>
         </Card>
       ))}
-
-      {interimTranscript && (
-        <Card className="border-dashed">
-          <CardContent className="space-y-2 p-3">
-            <p className="text-sm text-muted-foreground">{interimTranscript}</p>
-            {interimTranslation && (
-              <>
-                <Separator />
-                <p className="text-sm text-muted-foreground/70">{interimTranslation}</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       <div ref={bottomRef} />
     </div>

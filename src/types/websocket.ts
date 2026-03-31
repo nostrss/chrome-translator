@@ -8,7 +8,6 @@ export interface ClientMessage<T = unknown> {
 }
 
 export interface StartSpeechData {
-  languageCode?: string;
   targetLanguageCode?: string;
   translationMode?: 'standard' | 'advanced';
   sampleRateHertz?: number;
@@ -42,12 +41,15 @@ export interface ConnectedData {
 }
 
 export interface SpeechResultData {
+  segmentId: string;
   transcript: string;
   isFinal: boolean;
+  detectedLanguage: string;
   timestamp: number;
 }
 
 export interface TranslationResultData {
+  segmentId: string;
   originalText: string;
   translatedText: string;
   isFinal: boolean;

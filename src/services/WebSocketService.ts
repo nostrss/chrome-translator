@@ -11,8 +11,8 @@ import type {
 export interface WebSocketCallbacks {
   onConnected?: (sessionId: string) => void;
   onSpeechStarted?: () => void;
-  onSpeechResult?: (transcript: string, isFinal: boolean) => void;
-  onTranslationResult?: (original: string, translated: string, isFinal: boolean) => void;
+  onSpeechResult?: (segmentId: string, transcript: string, isFinal: boolean) => void;
+  onTranslationResult?: (segmentId: string, original: string, translated: string, isFinal: boolean) => void;
   onSpeechStopped?: () => void;
   onError?: (code: ErrorCode, message: string) => void;
   onDisconnected?: () => void;
@@ -59,12 +59,12 @@ export class WebSocketService {
         break;
       case 'speech_result': {
         const data = msg.data as SpeechResultData;
-        this.callbacks.onSpeechResult?.(data.transcript, data.isFinal);
+        this.callbacks.onSpeechResult?.(data.segmentId, data.transcript, data.isFinal);
         break;
       }
       case 'translation_result': {
         const data = msg.data as TranslationResultData;
-        this.callbacks.onTranslationResult?.(data.originalText, data.translatedText, data.isFinal);
+        this.callbacks.onTranslationResult?.(data.segmentId, data.originalText, data.translatedText, data.isFinal);
         break;
       }
       case 'speech_stopped':
@@ -79,13 +79,12 @@ export class WebSocketService {
   }
 
   startSpeech(
-    languageCode = 'ko-KR',
     targetLanguageCode?: string,
     translationMode: TranslationMode = 'standard',
   ) {
     this.send({
       event: 'start_speech',
-      data: { languageCode, targetLanguageCode, translationMode },
+      data: { targetLanguageCode, translationMode },
     });
   }
 
