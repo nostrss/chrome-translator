@@ -52,16 +52,16 @@ function SidePanel() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden p-4">
-      <header className="flex items-center justify-between pb-4">
+      {/* <header className="flex items-center justify-between pb-4">
         <h1 className="text-lg font-semibold">Tab Translator</h1>
         <Badge variant={isActive ? 'default' : 'secondary'}>
           {isActive ? 'Connected' : 'Disconnected'}
         </Badge>
-      </header>
+      </header> */}
 
       <div className="flex flex-col gap-3 pb-4">
         <LanguageSelector
-          label="Target Language"
+          label="Translation Language"
           languages={translationLanguages ?? []}
           value={targetLanguage}
           onChange={setTargetLanguage}
