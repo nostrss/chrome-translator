@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { TranslationModeSelector } from '@/components/TranslationModeSelector';
 import { RecordButton } from '@/components/RecordButton';
-import { RecordingStatus } from '@/components/RecordingStatus';
 import { ErrorAlert } from '@/components/ErrorAlert';
 import { TranscriptPanel } from '@/components/TranscriptPanel';
 import { Separator } from '@/components/ui/separator';
@@ -75,7 +74,6 @@ function SidePanel() {
           disabled={isActive}
         />
         <RecordButton status={status} onStart={handleStart} onStop={stop} />
-        <RecordingStatus status={status} />
       </div>
 
       {error && (
