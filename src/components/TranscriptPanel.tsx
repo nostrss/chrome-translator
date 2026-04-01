@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useTranslationStore } from '@/stores/useTranslationStore';
 
 export function TranscriptPanel() {
-  const { segments } = useTranslationStore();
+  const { segments, targetLanguage } = useTranslationStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
@@ -38,15 +38,24 @@ export function TranscriptPanel() {
       onScroll={checkIfNearBottom}
       className="flex flex-1 flex-col gap-2 overflow-y-auto"
     >
-      {segments.map((segment) => (
-        <Card key={segment.segmentId} className={segment.isFinal ? '' : 'border-dashed'}>
-          <CardContent className="p-3">
-            <p className={`text-sm ${segment.isFinal ? '' : 'text-muted-foreground'}`}>
-              {segment.translation || segment.transcript}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
+      {segments
+        .filter((s) => {
+          const sameLanguage = s.detectedLanguage === targetLanguage;
+          return sameLanguage || s.translation;
+        })
+        .map((segment) => {
+          const sameLanguage = segment.detectedLanguage === targetLanguage;
+          const text = sameLanguage ? segment.transcript : segment.translation;
+          return (
+            <Card key={segment.segmentId} className={segment.isFinal ? '' : 'border-dashed'}>
+              <CardContent className="p-3">
+                <p className={`text-sm ${segment.isFinal ? '' : 'text-muted-foreground'}`}>
+                  {text}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
 
       <div ref={bottomRef} />
     </div>

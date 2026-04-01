@@ -15,6 +15,7 @@ export function useRecorder() {
   const {
     upsertTranscript,
     upsertTranslation,
+    setTargetLanguage,
     clear,
   } = useTranslationStore();
 
@@ -29,6 +30,7 @@ export function useRecorder() {
     (targetLanguage: string, translationMode: TranslationMode) => {
       cleanup();
       setStatus('CONNECTING');
+      setTargetLanguage(targetLanguage);
 
       const ws = new WebSocketService();
       const mic = new AudioRecorderService();
@@ -56,8 +58,8 @@ export function useRecorder() {
             setStatus('STOPPED');
           }
         },
-        onSpeechResult: (segmentId, transcript, isFinal) => {
-          upsertTranscript(segmentId, transcript, isFinal);
+        onSpeechResult: (segmentId, transcript, isFinal, detectedLanguage) => {
+          upsertTranscript(segmentId, transcript, isFinal, detectedLanguage);
         },
         onTranslationResult: (segmentId, _original, translated, isFinal) => {
           upsertTranslation(segmentId, translated, isFinal);
@@ -82,7 +84,7 @@ export function useRecorder() {
 
       ws.connect(WS_URL);
     },
-    [cleanup, setStatus, setSessionId, setError, upsertTranscript, upsertTranslation],
+    [cleanup, setStatus, setSessionId, setError, setTargetLanguage, upsertTranscript, upsertTranslation],
   );
 
   const stop = useCallback(() => {

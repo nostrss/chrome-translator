@@ -11,7 +11,7 @@ import type {
 export interface WebSocketCallbacks {
   onConnected?: (sessionId: string) => void;
   onSpeechStarted?: () => void;
-  onSpeechResult?: (segmentId: string, transcript: string, isFinal: boolean) => void;
+  onSpeechResult?: (segmentId: string, transcript: string, isFinal: boolean, detectedLanguage: string) => void;
   onTranslationResult?: (segmentId: string, original: string, translated: string, isFinal: boolean) => void;
   onSpeechStopped?: () => void;
   onError?: (code: ErrorCode, message: string) => void;
@@ -59,7 +59,7 @@ export class WebSocketService {
         break;
       case 'speech_result': {
         const data = msg.data as SpeechResultData;
-        this.callbacks.onSpeechResult?.(data.segmentId, data.transcript, data.isFinal);
+        this.callbacks.onSpeechResult?.(data.segmentId, data.transcript, data.isFinal, data.detectedLanguage);
         break;
       }
       case 'translation_result': {
