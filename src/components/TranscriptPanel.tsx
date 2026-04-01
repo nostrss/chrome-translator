@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useTranslationStore } from '@/stores/useTranslationStore';
 
 export function TranscriptPanel() {
@@ -41,18 +40,10 @@ export function TranscriptPanel() {
     >
       {segments.map((segment) => (
         <Card key={segment.segmentId} className={segment.isFinal ? '' : 'border-dashed'}>
-          <CardContent className="space-y-2 p-3">
+          <CardContent className="p-3">
             <p className={`text-sm ${segment.isFinal ? '' : 'text-muted-foreground'}`}>
-              {segment.transcript}
+              {segment.translation || segment.transcript}
             </p>
-            {segment.translation && (
-              <>
-                <Separator />
-                <p className={`text-sm ${segment.isFinal ? 'text-muted-foreground' : 'text-muted-foreground/70'}`}>
-                  {segment.translation}
-                </p>
-              </>
-            )}
           </CardContent>
         </Card>
       ))}

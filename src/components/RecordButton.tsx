@@ -43,7 +43,7 @@ export function RecordButton({ status, onStart, onStop }: RecordButtonProps) {
     >
       {isConnecting && 'Connecting...'}
       {isRecording && `Stop · ${formatTime(elapsed)}`}
-      {(status === 'IDLE' || status === 'STOPPED') && 'Start Recording'}
+      {(status === 'IDLE' || status === 'STOPPED') && 'Start Translating'}
     </Button>
   );
 }
