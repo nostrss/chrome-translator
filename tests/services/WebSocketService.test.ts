@@ -75,7 +75,7 @@ describe('WebSocketService', () => {
         success: true,
         data: { segmentId: 'seg-0', transcript: 'hello', isFinal: true, timestamp: 1 },
       });
-      expect(onSpeechResult).toHaveBeenCalledWith('seg-0', 'hello', true);
+      expect(onSpeechResult).toHaveBeenCalledWith('seg-0', 'hello', true, undefined);
     });
   });
 
@@ -98,12 +98,26 @@ describe('WebSocketService', () => {
     service.connect('ws://localhost:8080');
     await vi.waitFor(() => expect(mockWs).toBeDefined());
 
-    service.startSpeech('en-US', 'standard');
+    service.startSpeech('en-US', 'gemini-flash-lite');
 
     const sent = mockWs.sent.map((s) => JSON.parse(s));
     expect(sent).toContainEqual({
       event: 'start_speech',
-      data: { targetLanguageCode: 'en-US', translationMode: 'standard' },
+      data: { targetLanguageCode: 'en-US', translationMode: 'gemini-flash-lite', apiKeys: undefined },
+    });
+  });
+
+  it('sends start_speech with apiKeys for paid model', async () => {
+    service.connect('ws://localhost:8080');
+    await vi.waitFor(() => expect(mockWs).toBeDefined());
+
+    const apiKeys = { openrouterKey: 'sk-or-test' };
+    service.startSpeech('ko', 'gpt-4.1-nano', apiKeys);
+
+    const sent = mockWs.sent.map((s) => JSON.parse(s));
+    expect(sent).toContainEqual({
+      event: 'start_speech',
+      data: { targetLanguageCode: 'ko', translationMode: 'gpt-4.1-nano', apiKeys },
     });
   });
 });
