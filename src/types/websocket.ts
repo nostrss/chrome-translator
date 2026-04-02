@@ -9,7 +9,8 @@ export interface ClientMessage<T = unknown> {
 
 export interface StartSpeechData {
   targetLanguageCode?: string;
-  translationMode?: 'standard' | 'advanced';
+  translationMode?: TranslationMode;
+  apiKeys?: { openrouterKey?: string };
   sampleRateHertz?: number;
 }
 
@@ -68,7 +69,14 @@ export type ErrorCode =
   | 'SESSION_TIMEOUT'
   | 'STT_ERROR'
   | 'TRANSLATION_ERROR'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR'
+  | 'API_KEY_REQUIRED'
+  | 'API_KEY_INVALID'
+  | 'API_KEY_NO_BILLING'
+  | 'API_KEY_NO_PERMISSION'
+  | 'API_RATE_LIMITED'
+  | 'API_QUOTA_EXCEEDED'
+  | 'API_PROVIDER_ERROR';
 
 // ─── Common ───
 
@@ -78,4 +86,13 @@ export interface Language {
   nativeName: string;
 }
 
-export type TranslationMode = 'standard' | 'advanced';
+export type TranslationMode = string;
+
+export interface Model {
+  id: TranslationMode;
+  name: string;
+  provider: string;
+  category: 'fast' | 'premium';
+  isFree: boolean;
+  requiredKeyType: string[] | null;
+}
