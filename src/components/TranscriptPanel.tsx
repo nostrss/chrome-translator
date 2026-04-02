@@ -36,7 +36,7 @@ export function TranscriptPanel() {
     <div
       ref={scrollRef}
       onScroll={checkIfNearBottom}
-      className="flex flex-1 flex-col gap-2 overflow-y-auto"
+      className="flex flex-1 flex-col gap-2 overflow-y-auto pb-[120px]"
     >
       {segments
         .filter((s) => {
