@@ -14,6 +14,13 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   STT_ERROR: 'Speech recognition error. Please try again.',
   TRANSLATION_ERROR: 'Translation error. Speech recognition continues.',
   INTERNAL_ERROR: 'Server error. Please try again later.',
+  API_KEY_REQUIRED: 'An OpenRouter API key is required for this model.',
+  API_KEY_INVALID: 'Invalid API key. Please check your OpenRouter key.',
+  API_KEY_NO_BILLING: 'Billing is not active or insufficient credits.',
+  API_KEY_NO_PERMISSION: 'Your API key does not have access to this model.',
+  API_RATE_LIMITED: 'Rate limited. Please wait a moment.',
+  API_QUOTA_EXCEEDED: 'API quota exceeded. Please add credits.',
+  API_PROVIDER_ERROR: 'Translation provider is temporarily unavailable.',
 };
 
 interface ErrorAlertProps {
