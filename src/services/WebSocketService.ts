@@ -79,12 +79,13 @@ export class WebSocketService {
   }
 
   startSpeech(
-    targetLanguageCode?: string,
-    translationMode: TranslationMode = 'standard',
+    targetLanguageCode: string,
+    translationMode: TranslationMode,
+    apiKeys?: { openrouterKey?: string },
   ) {
     this.send({
       event: 'start_speech',
-      data: { targetLanguageCode, translationMode },
+      data: { targetLanguageCode, translationMode, apiKeys },
     });
   }
 

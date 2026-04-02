@@ -27,7 +27,7 @@ export function useRecorder() {
   }, []);
 
   const start = useCallback(
-    (targetLanguage: string, translationMode: TranslationMode) => {
+    (targetLanguage: string, translationMode: TranslationMode, apiKeys?: { openrouterKey?: string }) => {
       cleanup();
       setStatus('CONNECTING');
       setTargetLanguage(targetLanguage);
@@ -45,7 +45,7 @@ export function useRecorder() {
         onConnected: (sessionId) => {
           setSessionId(sessionId);
           setStatus('CONNECTED');
-          ws.startSpeech(targetLanguage, translationMode);
+          ws.startSpeech(targetLanguage, translationMode, apiKeys);
         },
         onSpeechStarted: async () => {
           try {
