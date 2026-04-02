@@ -27,16 +27,22 @@ export const useTranslationStore = create<TranslationState>((set) => ({
   upsertTranscript: (segmentId, transcript, isFinal, detectedLanguage) =>
     set((state) => {
       const segments = [...state.segments];
+      const sameLanguage = detectedLanguage === state.targetLanguage;
       const index = segments.findIndex((s) => s.segmentId === segmentId);
       if (index !== -1) {
-        segments[index] = { ...segments[index], transcript, isFinal, detectedLanguage };
+        segments[index] = {
+          ...segments[index],
+          transcript,
+          detectedLanguage,
+          ...(sameLanguage && { isFinal }),
+        };
       } else {
         segments.push({
           segmentId,
           transcript,
           translation: '',
           detectedLanguage,
-          isFinal,
+          isFinal: sameLanguage ? isFinal : false,
           timestamp: Date.now(),
         });
       }
@@ -51,7 +57,7 @@ export const useTranslationStore = create<TranslationState>((set) => ({
         segments[index] = {
           ...segments[index],
           translation: translatedText,
-          isFinal: isFinal || segments[index].isFinal,
+          isFinal,
         };
       }
       return { segments };
