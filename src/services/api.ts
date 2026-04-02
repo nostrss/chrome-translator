@@ -1,9 +1,13 @@
-import type { Language } from '@/types/websocket';
+import type { Language, Model } from '@/types/websocket';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface LanguagesResponse {
   languages: Language[];
+}
+
+interface ModelsResponse {
+  models: Model[];
 }
 
 export async function fetchTranslationLanguages(query?: string): Promise<Language[]> {
@@ -15,6 +19,14 @@ export async function fetchTranslationLanguages(query?: string): Promise<Languag
 
   const { languages }: LanguagesResponse = await res.json();
   return languages;
+}
+
+export async function fetchModels(): Promise<Model[]> {
+  const res = await fetch(`${API_URL}/api/translate/models`);
+  if (!res.ok) throw new Error(`Failed to fetch models: ${res.status}`);
+
+  const { models }: ModelsResponse = await res.json();
+  return models;
 }
 
 export async function checkHealth(): Promise<boolean> {
