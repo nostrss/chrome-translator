@@ -1,197 +1,132 @@
-# Tab Translator (Chrome Extension)
+# Tab Translator
 
-Chrome Side Panel에서 현재 탭 오디오를 캡처하고, WebSocket 기반으로 실시간 번역 결과를 표시하는 확장 프로그램입니다.
+브라우저 탭의 음성을 실시간으로 인식하고 번역하는 Chrome 확장 프로그램입니다.
 
 ## 주요 기능
 
-- Side Panel UI에서 녹음 시작/중지
-- `chrome.tabCapture` 기반 탭 오디오 캡처
-- 16kHz PCM(Int16, Base64) 오디오 chunk WebSocket 전송
-- 실시간 번역 결과 누적/갱신 표시
-- 소스/타겟 언어 선택
+- 탭 오디오 실시간 캡처 및 음성 인식(STT)
+- 다국어 실시간 번역 (무료/유료 모델 선택 가능)
+- Chrome Side Panel UI
+- OpenRouter API 키를 통한 유료 모델 지원
 
-## 사전 요구사항
+## 기술 스택
+
+| 영역 | 기술 |
+|------|------|
+| UI | React 19, TypeScript 5.8, Tailwind CSS 3.4 |
+| 상태 관리 | Zustand 5, TanStack React Query 5 |
+| 빌드 | Vite 6, @crxjs/vite-plugin |
+| 오디오 | Web Audio API, AudioWorklet (16kHz 리샘플링) |
+| 통신 | WebSocket (실시간 스트리밍), REST API |
+| 테스트 | Vitest, React Testing Library |
+| 확장 프로그램 | Chrome Manifest V3 |
+
+## 프로젝트 구조
+
+```
+src/
+├── background/          # Chrome 백그라운드 서비스 워커
+├── sidepanel/           # Side Panel 진입점 (App.tsx)
+├── components/          # React 컴포넌트
+│   ├── ui/              # 기본 UI 컴포넌트 (Button, Card 등)
+│   ├── ModelSelector    # 번역 모델 선택 (Free/Fast/Premium)
+│   ├── LanguageSelector # 번역 대상 언어 선택
+│   ├── RecordButton     # 녹음 시작/중지
+│   ├── TranscriptPanel  # 번역 결과 표시
+│   ├── SettingsPanel    # API 키 관리
+│   └── ErrorAlert       # 에러 표시
+├── hooks/               # 커스텀 훅
+│   ├── useRecorder      # 녹음 흐름 제어
+│   ├── useModels        # 모델 목록 조회
+│   └── useLanguages     # 언어 목록 조회
+├── services/            # 서비스 레이어
+│   ├── AudioRecorderService  # 탭 오디오 캡처 및 리샘플링
+│   ├── WebSocketService      # WebSocket 통신
+│   ├── api                   # REST API 호출
+│   └── chromeMessaging       # Chrome 메시지 패싱
+├── stores/              # Zustand 스토어
+│   ├── useRecorderStore      # 녹음 상태 (status, sessionId, error)
+│   └── useTranslationStore   # 번역 세그먼트 관리
+└── types/               # TypeScript 타입 정의
+```
+
+## 데이터 흐름
+
+```
+브라우저 탭 오디오
+  → Chrome tabCapture API
+  → AudioRecorderService (AudioWorklet 16kHz 리샘플링)
+  → WebSocket 스트리밍
+  → 백엔드 서버 (STT + 번역)
+  → WebSocket 응답
+  → Zustand 스토어
+  → TranscriptPanel UI 업데이트
+```
+
+## 시작하기
+
+### 사전 준비
 
 - Node.js 18+
-- pnpm (권장, `packageManager: pnpm@10.10.0`)
-- Chrome (확장 프로그램 개발자 모드 사용)
+- pnpm
 
-## 설치 및 환경 변수
+### 설치
 
 ```bash
 pnpm install
 ```
 
-프로젝트 루트에 `.env` 파일을 만들고 아래 값을 설정하세요.
+### 환경 변수
+
+`.env` 파일에서 백엔드 엔드포인트를 설정합니다:
 
 ```env
-VITE_API_URL=https://your-api-server
-VITE_WS_URL=wss://your-ws-server
+VITE_API_URL=https://stt-translator-2kz3uzazsa-du.a.run.app
+VITE_WS_URL=wss://stt-translator-2kz3uzazsa-du.a.run.app
 ```
 
-- `VITE_API_URL`: 언어 목록 API 호출 베이스 URL (`/api/languages` 사용)
-- `VITE_WS_URL`: 실시간 번역 WebSocket 서버 URL
-
-## 개발/빌드/로컬 로드
+### 개발
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
-```bash
-pnpm run build
-```
-
-Chrome에서 확장 프로그램 로드:
+빌드된 확장 프로그램을 Chrome에 로드하려면:
 
 1. `chrome://extensions` 접속
-2. 우측 상단 `개발자 모드` 활성화
-3. `압축해제된 확장 프로그램을 로드합니다` 클릭
-4. 프로젝트의 `dist` 폴더 선택
+2. "개발자 모드" 활성화
+3. "압축해제된 확장 프로그램을 로드합니다" 클릭
+4. `dist` 폴더 선택
 
-## 스크립트
+### 빌드
 
 ```bash
-pnpm run dev              # Vite 개발 서버
-pnpm run build            # TypeScript 빌드 + Vite 빌드
-pnpm run preview          # Vite preview
-pnpm run test             # Vitest
-pnpm run test:ui          # Vitest UI
-pnpm run test:coverage    # 커버리지 리포트
-pnpm run lint             # ESLint
-pnpm run typecheck        # 타입 체크
-pnpm run generate:icons   # 아이콘 생성 스크립트
+pnpm build
 ```
 
-## 프로젝트 구조
+### 테스트
 
-```text
-src/
-├── app/                              # App 엔트리
-├── chrome/
-│   ├── background/service-worker.ts  # 액션 클릭/탭 캡처 메시지 처리
-│   ├── messaging/                    # runtime message 유틸/타입
-│   └── sidepanel/                    # Side Panel HTML/React 엔트리
-├── features/
-│   └── recorder/
-│       ├── components/               # Recorder UI 컴포넌트
-│       ├── hooks/                    # useRecorder, useLanguages
-│       ├── services/                 # AudioRecorderService, WebSocketService
-│       ├── stores/                   # Zustand 스토어
-│       └── types/                    # 도메인/소켓 타입
-└── shared/utils/                     # Result/함수형 유틸
+```bash
+pnpm test              # 테스트 실행
+pnpm test:watch        # 워치 모드
+pnpm test:coverage     # 커버리지 리포트
 ```
 
-## 기술 스택
+### 린트 및 타입 체크
 
-- React 19 + TypeScript
-- Zustand (상태 관리)
-- Vite 6 + `@crxjs/vite-plugin` (Chrome Extension 번들)
-- Tailwind CSS
-- Vitest + Testing Library
-
-## WebSocket 이벤트 처리 상세
-
-### 1) 이벤트 타입
-
-클라이언트 -> 서버:
-
-- `connect`
-- `start_speech`
-- `audio_chunk`
-- `stop_speech`
-
-서버 -> 클라이언트:
-
-- `connected`
-- `speech_started`
-- `speech_stopped`
-- `translation_result`
-- `error`
-- `voice_activity`
-- `speech_result` (타입 정의만 있고 현재 UI 처리 미사용)
-
-### 2) 이벤트별 처리 테이블
-
-| event | 방향 | payload 핵심 | 처리 위치 | 상태/UI 영향 | 타임아웃/예외 |
-|---|---|---|---|---|---|
-| `connect` | C -> S | 없음 | `useRecorder.startRecording` -> `wsService.sendConnect()` | 연결 핸드셰이크 시작 | 소켓 미연결 시 전송 실패 |
-| `connected` | S -> C | `sessionId` | `waitForConnected()` | `setRecording(sessionId)`에 사용 | 기본 5초 대기 타임아웃 |
-| `start_speech` | C -> S | `languageCode`, `targetLanguageCode`(선택) | `wsService.sendStartSpeech(...)` | STT 시작 요청 | 전송 실패 시 녹음 시작 실패 처리 |
-| `speech_started` | S -> C | 없음 | `waitForSpeechStarted()` | 녹음 상태 전환 직전 동기화 포인트 | 기본 5초 대기 타임아웃 |
-| `audio_chunk` | C -> S | `audio`(Base64 Int16 PCM) | `AudioRecorderService.onAudioChunk` -> `encodeAudioChunk` -> `sendAudioChunk` | 실시간 오디오 스트리밍 | chunk 전송 실패 시 경고 로그만 남기고 지속 |
-| `translation_result` | S -> C | `chatId`, `translatedText`, `isFinal` 등 | `wsService.onMessage` in `useRecorder` | `useTranslationStore.updateTranslation`로 UI 갱신 | 동일 `chatId` 항목 업데이트 |
-| `error` | S -> C | `error` 문자열 | `wsService.onMessage` in `useRecorder` | `stopRecordingFlow(error)` 실행 후 `error` 상태 | 종료 플로우에서 정리 수행 |
-| `voice_activity` | S -> C | `type`, `message`, `timestamp` | `wsService.onMessage` in `useRecorder` | `type === 'timeout'`이면 자동 종료 | 사용자 stop 없이 종료될 수 있음 |
-| `stop_speech` | C -> S | 없음 | `stopRecordingFlow` -> `sendStopSpeech()` | 종료 핸드셰이크 시작 | 전송 실패여도 이후 정리 시도 |
-| `speech_stopped` | S -> C | 없음 | `waitForSpeechStopped(2000)` | 서버 종료 확인 | 2초 타임아웃 시 무시하고 로컬 정리 진행 |
-| `speech_result` | S -> C | `transcript`, `isFinal` | (현재 미사용) | 현재 store/UI 반영 없음 | 타입만 존재 |
-
-### 3) 녹음 시작 시퀀스
-
-```mermaid
-sequenceDiagram
-  participant UI as RecordButton/useRecorder
-  participant WS as WebSocketService
-  participant REC as AudioRecorderService
-  participant SW as Chrome Service Worker
-  participant API as WS Server
-
-  UI->>WS: connect(VITE_WS_URL)
-  WS-->>UI: onopen
-  UI->>WS: send connect
-  WS->>API: {"event":"connect"}
-  API-->>WS: {"event":"connected","data":{"sessionId"}}
-  WS-->>UI: waitForConnected resolve
-
-  UI->>REC: startRecording()
-  REC->>SW: REQUEST_TAB_CAPTURE(tabId)
-  SW-->>REC: streamId
-  REC-->>UI: recording ready
-
-  UI->>WS: send start_speech(languageCode,targetLanguageCode)
-  WS->>API: {"event":"start_speech",...}
-  API-->>WS: {"event":"speech_started"}
-  WS-->>UI: waitForSpeechStarted resolve
-  UI-->>UI: setRecording(sessionId)
-
-  loop while recording
-    REC-->>UI: audio samples
-    UI->>WS: send audio_chunk(base64 PCM)
-    API-->>WS: translation_result (0..N)
-    WS-->>UI: onMessage
-    UI-->>UI: updateTranslation(chatId 기반 upsert)
-  end
+```bash
+pnpm lint
+pnpm typecheck
 ```
 
-### 4) 녹음 종료 시퀀스
+## 번역 모델
 
-```mermaid
-sequenceDiagram
-  participant UI as useRecorder/Stop
-  participant WS as WebSocketService
-  participant REC as AudioRecorderService
-  participant API as WS Server
+모델 목록은 서버에서 동적으로 가져오며, 세 가지 등급으로 분류됩니다:
 
-  Note over UI: 트리거: Stop 버튼 / error 이벤트 / voice timeout / 소켓 close
-  UI->>WS: send stop_speech
-  WS->>API: {"event":"stop_speech"}
-  UI->>WS: waitForSpeechStopped(2000)
-  API-->>WS: {"event":"speech_stopped"} (optional)
-  WS-->>UI: resolve or timeout(ignore)
-  UI->>REC: stopRecording()
-  UI->>WS: disconnect() + handler cleanup
-  UI-->>UI: completed 또는 error 상태 전환
-```
+| 등급 | 설명 | API 키 |
+|------|------|--------|
+| Free | 무료 모델 | 불필요 |
+| Fast | 빠른 유료 모델 | OpenRouter 키 필요 |
+| Premium | 고품질 유료 모델 | OpenRouter 키 필요 |
 
-### 5) 예외 처리 규칙
-
-- 소켓 연결 실패/타임아웃 시 시작 플로우 중단 후 `error` 상태 전환
-- 서버 `error` 이벤트 수신 시 `stopRecordingFlow(errorMessage)` 실행
-- `voice_activity.type === "timeout"` 수신 시 자동 stop 플로우 실행
-- 소켓 `onclose` 발생 시 현재 상태가 `recording/requesting`이면 stop 플로우 실행
-- stop 과정의 `speech_stopped` 대기는 최대 2초, 타임아웃은 무시하고 로컬 정리 진행
-
-## 라이선스
-
-MIT
+유료 모델을 사용하려면 Settings 탭에서 [OpenRouter](https://openrouter.ai) API 키를 등록하세요.
